@@ -5,7 +5,11 @@ import "../../packages/nightingale-track-canvas/src/index.ts";
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
-const defaultSequence = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
+const seq = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
+const defaultSequence = repStr(seq, 1);
+function repStr(str: string, n: number) {
+  return new Array(n).fill(0).map(() => str).join('');
+}
 
 const defaultData = [
   {
@@ -59,11 +63,12 @@ const perResidueData = Array.from(defaultSequence).map((aa, i) => ({
   accession: `feature${i}`,
   start: i + 1,
   end: i + 1,
+  // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
   color: ResidueColors[i % ResidueColors.length],
 }));
 
 
-const N_TRACKS = 20;
+const N_TRACKS = 1;
 // const N_TRACKS = 2000;
 console.time("Loading all")
 

@@ -22,7 +22,7 @@ import { property } from "lit/decorators.js";
 import { getColorByType, getShapeByType } from "./ConfigHelper";
 import DefaultLayout from "./DefaultLayout";
 import FeatureShape, { Shapes } from "./FeatureShape";
-import { Refresher } from "./helpers";
+import { findPredecessorIndex, Refresher } from "./helpers";
 import NonOverlappingLayout from "./NonOverlappingLayout";
 
 
@@ -402,20 +402,30 @@ class NightingaleTrackCanvas extends withManager(
     const canvasWidth = this.canvasCtx.canvas.width;
     const canvasHeight = this.canvasCtx.canvas.height;
     this.canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    const featureYs = this.data.map(feature => this.layoutObj?.getFeatureYPos(feature) ?? 0);
+    if (!this.allFragments) return;
     const baseWidth = this.getSingleBaseWidth();
     const height = this.layoutObj?.getFeatureHeight() ?? 0;
+    const featureYs: Record<number, number> = {};
+    const featureColors: Record<number, string> = {};
     const leftEdgeSeq = this.xScale?.invert(-this["margin-left"]) ?? -Infinity;
     const rightEdgeSeq = this.xScale?.invert(canvasWidth - this["margin-left"]) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
-    for (const fragment of this.allFragments ?? []) {
+
+    const start = 0, end = this.allFragments.length;
+    // This assumes all fragments have length 1!:
+    // const start = findPredecessorIndex(this.allFragments, Math.ceil(leftEdgeSeq), f => f.start + 1);
+    // const end = findPredecessorIndex(this.allFragments, Math.floor(rightEdgeSeq) + 1, f => f.start);
+    // TODO store fragments in a smart structure to filter visible quickly without 
+    for (let i = start; i < end; i++) {
+      const fragment: ExtendedFragment = this.allFragments[i];
+      const iFeature = fragment.featureIndex;
       const endExcl = (fragment.end ?? fragment.start) + 1;
-      if (endExcl < leftEdgeSeq || fragment.start > rightEdgeSeq) continue; // TODO store fragments in a smart structure to filter visible quickly
+      if (endExcl < leftEdgeSeq || fragment.start > rightEdgeSeq) continue;
       const x = this.getXFromSeqPosition(fragment.start); // TODO try calculate from this["margin-left"], this.xScale.domain, this.xScale.range?
       const fragmentLength = endExcl - fragment.start;
       const width = fragmentLength * baseWidth;
-      const y = featureYs[fragment.featureIndex];
-      this.canvasCtx.fillStyle = this.getFeatureFillColor(this.data[fragment.featureIndex]);
+      const y = featureYs[iFeature] ??= (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
+      this.canvasCtx.fillStyle = featureColors[iFeature] ??= this.getFeatureFillColor(this.data[iFeature]);
       this.canvasCtx.fillRect(x, y, width, height);
     }
     // console.timeEnd("canvasDrawFeatures")
