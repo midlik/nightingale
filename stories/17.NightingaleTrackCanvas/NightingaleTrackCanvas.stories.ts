@@ -1,6 +1,7 @@
 import { Meta } from "@storybook/web-components";
 import { html } from "lit-html";
 import "../../packages/nightingale-track-canvas/src/index.ts";
+import { range } from "../../packages/nightingale-track-canvas/src/helpers";
 
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
@@ -59,13 +60,33 @@ const defaultData = [
 ];
 
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
-const perResidueData = Array.from(defaultSequence).map((aa, i) => ({
+// const ResidueColors = ['#111111', '#ffeedd'];
+const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
   start: i + 1,
   end: i + 1,
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
-  color: ResidueColors[i % ResidueColors.length],
+  // color: ResidueColors[i % ResidueColors.length],
+  color: '#000000',
+  fill: ResidueColors[i % ResidueColors.length],
+  // shape: 'triangle',
+  // opacity: 1,
 }));
+
+const spanLength = 10;
+const spanData = range(defaultSequence.length / spanLength).map((_, i) => ({
+  accession: `feature${i}`,
+  start: i * spanLength + 1,
+  end: (i + 1) * spanLength - 1,
+  // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
+  // color: ResidueColors[i % ResidueColors.length],
+  color: '#000000',
+  fill: ResidueColors[i % ResidueColors.length],
+  shape: 'circle',
+  opacity: 1,
+}));
+
+const data = perResidueData;
 
 
 const N_TRACKS = 1;
@@ -84,13 +105,13 @@ export const ManyTracks = () => {
     "margin-color": "transparent",
     navigationHeight: 50,
     sequenceHeight: 30,
-    trackHeight: 10,
+    trackHeight: 18,
     foo: "track features refresh",
   };
 
   const tracks = new Array(N_TRACKS).fill(0).map((_, i) =>
     html`
-    <div style="line-height: 0; padding-top: 2px;">
+    <div style="line-height: 0; margin-top: 2px;">
       <nightingale-track-canvas
         id="track-${i}"
         min-width="${args["min-width"]}"
@@ -158,12 +179,12 @@ ManyTracks.play = async () => {
   console.timeEnd("Loading all")
   console.time("play")
   await customElements.whenDefined("nightingale-track-canvas");
-  console.log(`Initializing ${N_TRACKS} tracks (${N_TRACKS * perResidueData.length} items)`)
+  console.log(`Initializing ${N_TRACKS} tracks (${N_TRACKS * data.length} items)`)
   console.time("Initializing")
   for (let i = 0; i < N_TRACKS; i++) {
     const track = document.getElementById(`track-${i}`);
     if (track) {
-      (track as any).data = perResidueData;
+      (track as any).data = data;
     }
   }
   console.timeEnd("Initializing")

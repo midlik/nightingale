@@ -8,7 +8,7 @@
 export interface Refresher {
     requestRefresh: () => void,
 }
-export function Refresher(refresh: () => any): Refresher {
+export function Refresher(refresh: () => void): Refresher {
     let requested = false;
     let running = false;
     function requestRefresh(): void {
@@ -136,7 +136,7 @@ function randInt(min: number, max: number) {
 function sortNumeric(array: number[]): number[] {
     return array.sort((a, b) => a - b);
 }
-function sortBy<T>(array: T[], key: ((item: T) => any) = (e => e)): T[] {
+function sortBy<T, V>(array: T[], key: ((item: T) => V) = (e => e as unknown as V)): T[] {
     return array.sort((a, b) => {
         const ka = key(a);
         const kb = key(b);
@@ -172,56 +172,69 @@ export class RangeCollection<T> {
             while (binSpans < length) binSpans *= this.Q;
             (this.bins[binSpans] ??= []).push(i);
         }
-        this.binSpans = sortBy(Object.keys(this.bins).map(Number));
+        this.binSpans = sortNumeric(Object.keys(this.bins).map(Number));
         for (const binSpan of this.binSpans) {
-            sortBy(this.bins[binSpan], i => this.starts[i]);
+            this.bins[binSpan].sort(this.compareFn);
         }
     }
     size(): number {
         return this.items.length;
     }
-    /** Get all items that overlap by at least one position with interval [start, stop).
-     * Does not guarantee original order of the ranges. */
-    getOverlappingItemIndices(start: number, stop: number): number[] {
-        const out: number[] = [];
-        for (const binSpan of this.binSpans) {
-            const bin = this.bins[binSpan];
-            const from = findPredecessorIndex(bin, start - binSpan + 1, i => this.starts[i]);
-            const to = findPredecessorIndex(bin, stop, i => this.starts[i]);
-            for (let j = from; j < to; j++) {
-                const i = bin[j];
-                if (this.stops[i] > start) {
-                    out.push(i);
-                }
+    private _tmpArrays: Record<number, number[]> = {};
+
+    /** Get all ranges that overlap by at least one position with interval [start, stop).
+     * Does not preserve original order of the ranges!
+     * Instead sorts the ranges by their start (ranges with the same start are sorted by decreasing length). */
+    overlappingItems(start: number, stop: number): T[] {
+        return this.overlappingItemIndices(start, stop).map(i => this.items[i]);
+    }
+    /** Get indices of all ranges that overlap by at least one position with interval [start, stop).
+     * Does not preserve original order of the ranges!
+     * Instead sorts the ranges by their start (ranges with the same start are sorted by decreasing length). */
+    overlappingItemIndices(start: number, stop: number): number[] {
+        const partialOuts = this.binSpans.map(binSpan => this.overlappingItemIndicesInBin(binSpan, start, stop, this._tmpArrays[binSpan] ??= []));
+        return mergeSortedArrays(partialOuts, this.compareFn);
+    }
+    private overlappingItemIndicesInBin(binSpan: number, start: number, stop: number, out: number[]): number[] {
+        out.length = 0;
+        const bin = this.bins[binSpan];
+        const from = findPredecessorIndex(bin, start - binSpan + 1, i => this.starts[i]);
+        const to = findPredecessorIndex(bin, stop, i => this.starts[i]);
+        for (let j = from; j < to; j++) {
+            const i = bin[j];
+            if (this.stops[i] > start) {
+                out.push(i);
             }
         }
         return out;
     }
-    /** Get all items that overlap by at least one position with interval [start, stop).
-     * Does not guarantee original order of the ranges. */
-    getOverlappingItems(start: number, stop: number): T[] {
-        return this.getOverlappingItemIndices(start, stop).map(i => this.items[i]);
+    overlappingItems_reference(start: number, stop: number, order: 'original' | 'sort'): T[] {
+        return this.overlappingItemIndices_reference(start, stop, order).map(i => this.items[i]);
     }
-    getOverlappingItems_reference(start: number, stop: number): T[] {
-        return this.items.filter((item, i) => this.starts[i] < stop && this.stops[i] > start);
+    overlappingItemIndices_reference(start: number, stop: number, order: 'original' | 'sort'): number[] {
+        const out = range(this.items.length).filter(i => this.starts[i] < stop && this.stops[i] > start);
+        if (order === 'sort') out.sort(this.compareFn);
+        return out;
     }
     print() {
         for (const binSpan of this.binSpans) {
             console.log(`Bin ${binSpan}:`, this.bins[binSpan].map(r => `${this.starts[r]}-${this.stops[r]}(${this.stops[r] - this.starts[r]})`).join('  '));
         }
     }
+    /** Compare function to sort ranges by start, if start equal longer range goes first */
+    private compareFn = (i: number, j: number) => this.starts[i] - this.starts[j] || this.stops[j] - this.stops[i];
+
+    /** Sort ranges by start, if start equal longer range goes first */
     private static sortRanges(collection: [number, number][]) {
-        return collection.sort((x, y) => x[0] - y[0] || x[1] - y[1]);
+        return collection.sort((x, y) => x[0] - y[0] || y[1] - x[1]);
     }
     static equal(collectionA: [number, number][], collectionB: [number, number][]) {
-        const a = this.sortRanges(Array.from(collectionA));
-        const b = this.sortRanges(Array.from(collectionB));
-        // const a = collectionA;
-        // const b = collectionB;
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (a[i][0] !== b[i][0]) return false;
-            if (a[i][1] !== b[i][1]) return false;
+        // collectionA = this.sortRanges(Array.from(collectionA));
+        // collectionB = this.sortRanges(Array.from(collectionB));
+        if (collectionA.length !== collectionB.length) return false;
+        for (let i = 0; i < collectionA.length; i++) {
+            if (collectionA[i][0] !== collectionB[i][0]) return false;
+            if (collectionA[i][1] !== collectionB[i][1]) return false;
         }
         return true;
     }
@@ -235,13 +248,11 @@ function randomRange(minStart: number, maxStop: number): Range {
     return Range(randInt(minStart, maxStop + 1), randInt(minStart, maxStop + 1));
 }
 
-const ranges = [[1, 2], [3, 4], [5, 6], [0, 5], [1, 6], [1, 17], [1, 18],] as [number, number][];
-console.log('Ranges:', ranges.join('  '))
-const collection = new RangeCollection(ranges, { start: r => r[0], stop: r => r[1] });
-
-console.log('Found:', collection.getOverlappingItems(17, 100).join('  '));
-
-collection.print();
+// const ranges = [[1, 2], [3, 4], [5, 6], [0, 5], [1, 6], [1, 17], [1, 18],] as [number, number][];
+// console.log('Ranges:', ranges.join('  '))
+// const collection = new RangeCollection(ranges, { start: r => r[0], stop: r => r[1] });
+// console.log('Found:', collection.getOverlappingItems(17, 100).join('  '));
+// collection.print();
 
 // const n = 10_000;
 // const arr = new Array(n).fill(0).map(() => randomRange(0, 1000));
@@ -249,21 +260,24 @@ collection.print();
 // col.print();
 
 
-const MAX_N = 10_000;
-const RANGE = [0, 10_000] as const;
-console.time('test getOverlappingItems')
-for (let i = 0; i < 100; i++) {
-    const n = MAX_N;
-    const arr = new Array(n).fill(0).map(() => randomRange(...RANGE));
-    const collection = new RangeCollection(arr, { start: r => r[0], stop: r => r[1] });
-    const queryRange = randomRange(...RANGE);
-    const result_truth = collection.getOverlappingItems_reference(...queryRange);
-    const result = collection.getOverlappingItems(...queryRange);
-    const equal = RangeCollection.equal(result_truth, result);
-    console.log('Ranges:', arr.length, `Query range: ${queryRange}`, 'Truth:', result_truth.length, 'Found:', result.length)
-    if (!equal) throw new Error(`Mismatch: found ${result}, truth ${result_truth}`);
-}
-console.timeEnd('test getOverlappingItems')
+// const MAX_N = 1000;
+// const RANGE = [0, 100] as const;
+// console.time('test getOverlappingItems')
+// for (let i = 0; i < 1000; i++) {
+//     const n = MAX_N;
+//     const arr = new Array(n).fill(0).map(() => randomRange(...RANGE));
+//     const collection = new RangeCollection(arr, { start: r => r[0], stop: r => r[1] });
+//     const queryRange = randomRange(...RANGE);
+//     const result_truth = collection.overlappingItems_reference(...queryRange, 'sort');
+//     const result = collection.overlappingItems(...queryRange);
+//     const equal = RangeCollection.equal(result_truth, result);
+//     console.log('Ranges:', arr.length, `Query range: ${queryRange}`, 'Truth:', result_truth.length, 'Found:', result.length)
+//     console.log('Ranges', arr.join('  '))
+//     console.log('Truth', result_truth.join('  '))
+//     console.log('Found', result.join('  '))
+//     if (!equal) throw new Error(`Mismatch: found ${result}, truth ${result_truth}`);
+// }
+// console.timeEnd('test getOverlappingItems')
 
 
 function arraysEqual<T>(a: T[], b: T[]): boolean {
@@ -274,16 +288,16 @@ function arraysEqual<T>(a: T[], b: T[]): boolean {
     return true;
 }
 
-function mergeSortedArrays_reference(arrays: number[][]): number[] {
-    const out: number[] = [];
+function mergeSortedArrays_reference<T>(arrays: T[][], compareFn: (a: T, b: T) => number): T[] {
+    const out: T[] = [];
     for (const arr of arrays) out.push(...arr);
-    return sortBy(out);
+    return out.sort(compareFn);
 }
-function mergeSortedArrays(arrays: number[][]): number[] {
-    const queue = arrays.map((arr, i) => i).filter(i => arrays[i].length > 0);
-    sortBy(queue, i => arrays[i][0]);
+function mergeSortedArrays<T>(arrays: T[][], compareFn: (a: T, b: T) => number): T[] {
+    const queue = range(arrays.length).filter(i => arrays[i].length > 0);
+    queue.sort((a, b) => compareFn(arrays[a][0], arrays[b][0]));
     const heads = arrays.map(() => 0);
-    const out: number[] = [];
+    const out: T[] = [];
     while (queue.length > 0) {
         const iHeadArr = queue[0];
         const headArr = arrays[iHeadArr];
@@ -295,11 +309,12 @@ function mergeSortedArrays(arrays: number[][]): number[] {
             queue.shift();
         } else {
             // Insert head array to correct position
-            const newHeadValue = headArr[heads[iHeadArr]];
+            const headValue = headArr[heads[iHeadArr]];
             let i = 1;
             for (; i < queue.length; i++) {
                 const iOtherArr = queue[i];
-                if (newHeadValue > arrays[iOtherArr][heads[iOtherArr]]) {
+                const otherHeadValue = arrays[iOtherArr][heads[iOtherArr]];
+                if (compareFn(otherHeadValue, headValue) < 0) {
                     queue[i - 1] = iOtherArr;
                 } else {
                     break;
@@ -341,3 +356,10 @@ function mergeSortedArrays(arrays: number[][]): number[] {
 //     if (!arraysEqual(found, found_truth)) throw new Error(`Mismatch: found ${found}, truth ${found_truth}`);
 // }
 // console.timeEnd('test mergeSortedArrays')
+
+export function range(n: number): number[] {
+    n = Math.floor(n);
+    const out = new Array(n);
+    for (let i = 0; i < n; i++) out[i] = i;
+    return out;
+}

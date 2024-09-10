@@ -22,7 +22,7 @@ import { property } from "lit/decorators.js";
 import { getColorByType, getShapeByType } from "./ConfigHelper";
 import DefaultLayout from "./DefaultLayout";
 import FeatureShape, { Shapes } from "./FeatureShape";
-import { findPredecessorIndex, Refresher } from "./helpers";
+import { Refresher } from "./helpers";
 import NonOverlappingLayout from "./NonOverlappingLayout";
 
 
@@ -244,8 +244,8 @@ class NightingaleTrackCanvas extends withManager(
 
     this.svg?.selectAll("g").remove();
 
-    select(this).selectAll("svg").style("background-color", "#ddddff");
-    select(this).selectAll("canvas").style("background-color", "#bbeecc");
+    // select(this).selectAll("svg").style("background-color", "#ddddff");
+    // select(this).selectAll("canvas").style("background-color", "#bbeecc");
 
     this.svg = select(this as unknown as NightingaleElement)
       .selectAll<SVGSVGElement, unknown>(this.SVG_TAG)
