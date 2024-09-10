@@ -133,6 +133,19 @@ function randInt(min: number, max: number) {
 // console.timeEnd('test findPredecessorIndex')
 
 
+function sortNumeric(array: number[]): number[] {
+    return array.sort((a, b) => a - b);
+}
+function sortBy<T>(array: T[], key: ((item: T) => any) = (e => e)): T[] {
+    return array.sort((a, b) => {
+        const ka = key(a);
+        const kb = key(b);
+        if (ka > kb) return 1;
+        if (ka < kb) return -1;
+        return 0;
+    });
+}
+
 /** Data structure for storing integer intervals (ranges) and efficiently retrieving a subset of ranges which overlap with another interval. */
 export class RangeCollection<T> {
     protected readonly items: T[];
@@ -140,7 +153,8 @@ export class RangeCollection<T> {
     protected readonly stop: (item: T) => number;
 
     protected readonly Q = 2;
-    protected readonly binned: T[][]; // bin i contains ranges with length >= Q**i but < Q**(i+1)
+    protected readonly binSizes: number[];
+    protected readonly bins: Record<number, T[]>;
 
     /** Create a new collection of ranges. `start` must return range start (inclusive), `stop` must return range end (exclusive) */
     constructor(items: T[], accessors: { start: (item: T) => number, stop: (item: T) => number }) {
@@ -149,15 +163,16 @@ export class RangeCollection<T> {
         this.start = start;
         this.stop = stop;
 
-        this.binned = [];
+        this.bins = {};
         for (const item of items) {
             const length = stop(item) - start(item);
-            let iBin = 0;
-            while (this.Q ** iBin < length) iBin++;
-            (this.binned[iBin] ??= []).push(item);
+            let binSize = 1;
+            while (binSize < length) binSize *= this.Q;
+            (this.bins[binSize] ??= []).push(item);
         }
-        for (let iBin = 0; iBin < this.binned.length; iBin++) {
-            (this.binned[iBin] ??= []).sort((a, b) => start(a) - start(b));
+        this.binSizes = sortNumeric(Object.keys(this.bins).map(Number));
+        for (const binSize of this.binSizes) {
+            this.bins[binSize].sort((a, b) => start(a) - start(b));
         }
     }
     size(): number {
@@ -167,9 +182,9 @@ export class RangeCollection<T> {
      * Does not guarantee original order of the ranges. */
     getOverlappingItems(start: number, stop: number): T[] {
         const out: T[] = [];
-        for (let iBin = 0; iBin < this.binned.length; iBin++) {
-            const maxLength = this.Q ** iBin;
-            const bin = this.binned[iBin];
+        for (const binSize of this.binSizes) {
+            const maxLength = binSize;
+            const bin = this.bins[maxLength];
             const from = findPredecessorIndex(bin, start - maxLength + 1, this.start);
             const to = findPredecessorIndex(bin, stop, this.start);
             for (let i = from; i < to; i++) {
@@ -185,8 +200,8 @@ export class RangeCollection<T> {
         return this.items.filter(item => this.start(item) < stop && this.stop(item) > start);
     }
     print() {
-        for (let iBin = 0; iBin < this.binned.length; iBin++) {
-            console.log(`Bin ${iBin} length<=${this.Q ** iBin}:`, this.binned[iBin].join('  '))
+        for (const binSize of this.binSizes) {
+            console.log(`Bin ${binSize}:`, this.bins[binSize].map(r => `${this.start(r)}-${this.stop(r)}(${this.stop(r) - this.start(r)})`).join('  '));
         }
     }
     private static sortRanges(collection: [number, number][]) {
@@ -208,7 +223,7 @@ export class RangeCollection<T> {
 
 type Range = [start: number, stop: number]
 function Range(start: number, stop: number): Range {
-    return [start, stop].sort((a, b) => a - b) as Range;
+    return sortNumeric([start, stop]) as Range;
 }
 function randomRange(minStart: number, maxStop: number): Range {
     return Range(randInt(minStart, maxStop + 1), randInt(minStart, maxStop + 1));
@@ -222,14 +237,14 @@ console.log('Found:', collection.getOverlappingItems(17, 100).join('  '));
 
 collection.print();
 
-const n = 10_000;
-const arr = new Array(n).fill(0).map(() => randomRange(0, 1000));
-const col = new RangeCollection(arr, { start: r => r[0], stop: r => r[1] });
-col.print();
+// const n = 10_000;
+// const arr = new Array(n).fill(0).map(() => randomRange(0, 1000));
+// const col = new RangeCollection(arr, { start: r => r[0], stop: r => r[1] });
+// col.print();
 
 
 // const MAX_N = 10_000;
-// const RANGE = [0, 100] as const;
+// const RANGE = [0, 10_000] as const;
 // console.time('test getOverlappingItems')
 // for (let i = 0; i < 1000; i++) {
 //     const n = MAX_N;
@@ -243,3 +258,80 @@ col.print();
 //     if (!equal) throw new Error(`Mismatch: found ${result}, truth ${result_truth}`);
 // }
 // console.timeEnd('test getOverlappingItems')
+
+
+function arraysEqual<T>(a: T[], b: T[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function mergeSortedArrays_reference(arrays: number[][]): number[] {
+    const out: number[] = [];
+    for (const arr of arrays) out.push(...arr);
+    return sortBy(out);
+}
+function mergeSortedArrays(arrays: number[][]): number[] {
+    const queue = arrays.map((arr, i) => i).filter(i => arrays[i].length > 0);
+    sortBy(queue, i => arrays[i][0]);
+    const heads = arrays.map(() => 0);
+    const out: number[] = [];
+    while (queue.length > 0) {
+        const iHeadArr = queue[0];
+        const headArr = arrays[iHeadArr];
+        // Take one element from head array
+        out.push(headArr[heads[iHeadArr]++]);
+        // Restore queue ordering
+        if (heads[iHeadArr] === headArr.length) {
+            // Discard depleted head array
+            queue.shift();
+        } else {
+            // Insert head array to correct position
+            const newHeadValue = headArr[heads[iHeadArr]];
+            let i = 1;
+            for (; i < queue.length; i++) {
+                const iOtherArr = queue[i];
+                if (newHeadValue > arrays[iOtherArr][heads[iOtherArr]]) {
+                    queue[i - 1] = iOtherArr;
+                } else {
+                    break;
+                }
+            }
+            queue[i - 1] = iHeadArr;
+        }
+    }
+    return out;
+}
+
+// const arrays = [
+//     [2, 4, 9, 12],
+//     [6, 7, 11],
+//     [],
+//     [5],
+//     [1, 3, 5],
+//     [8, 10],
+// ];
+// console.log('arrays:', ...arrays)
+// console.log('truth:', mergeSortedArrays_reference(arrays))
+// console.log('out:', mergeSortedArrays(arrays))
+
+// const MAX_ARRAYS = 100;
+// const MAX_N = 1000;
+// const MAX_NUMBER = 1000;
+// console.time('test mergeSortedArrays')
+// for (let i = 0; i < 100; i++) {
+//     const arrays = [];
+//     const nArrays = randInt(0, MAX_ARRAYS);
+//     for (let j = 0; j < nArrays; j++) {
+//         const n = randInt(0, MAX_N);
+//         arrays[j] = sortBy(new Array(n).fill(0).map(() => randInt(0, MAX_NUMBER)));
+//     }
+//     // console.log('arrays', arrays)
+//     const found_truth = mergeSortedArrays_reference(arrays);
+//     const found = mergeSortedArrays(arrays);
+//     // console.log('merged', found)
+//     if (!arraysEqual(found, found_truth)) throw new Error(`Mismatch: found ${found}, truth ${found_truth}`);
+// }
+// console.timeEnd('test mergeSortedArrays')
