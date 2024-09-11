@@ -22,7 +22,7 @@ import { property } from "lit/decorators.js";
 import { getColorByType, getShapeByType } from "./ConfigHelper";
 import DefaultLayout from "./DefaultLayout";
 import FeatureShape, { Shapes } from "./FeatureShape";
-import { RangeCollection, Refresher } from "./helpers";
+import { RangeCollection, Refresher } from "./helpers/utils";
 import NonOverlappingLayout from "./NonOverlappingLayout";
 
 

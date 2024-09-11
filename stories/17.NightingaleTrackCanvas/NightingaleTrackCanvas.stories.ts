@@ -1,8 +1,8 @@
 import { Meta } from "@storybook/web-components";
-import { html } from "lit-html";
-import "../../packages/nightingale-track-canvas/src/index.ts";
-import { range } from "../../packages/nightingale-track-canvas/src/helpers";
 import { rgb } from "d3";
+import { html } from "lit-html";
+import { range } from "../../packages/nightingale-track-canvas/src/helpers/utils";
+import "../../packages/nightingale-track-canvas/src/index";
 
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
@@ -66,8 +66,9 @@ const defaultData = [
 ];
 
 
-const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
+// const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
 // const ResidueColors = ['#111111', '#ffeedd'];
+const ResidueColors = ['green'];
 const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
   start: i + 1,
@@ -75,6 +76,8 @@ const perResidueData = range(defaultSequence.length).map(i => ({
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
   color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
+  // color: '#000000',
+  // fill: '#00ffee',
   // shape: 'triangle',
   opacity: 0.75,
 }));
