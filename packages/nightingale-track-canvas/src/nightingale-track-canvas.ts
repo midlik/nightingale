@@ -22,7 +22,7 @@ import { property } from "lit/decorators.js";
 import { getColorByType, getShapeByType } from "./ConfigHelper";
 import DefaultLayout from "./DefaultLayout";
 import FeatureShape, { Shapes } from "./FeatureShape";
-import { Refresher } from "./helpers";
+import { RangeCollection, Refresher } from "./helpers";
 import NonOverlappingLayout from "./NonOverlappingLayout";
 
 
@@ -271,7 +271,7 @@ class NightingaleTrackCanvas extends withManager(
     this.createFeatures();
   }
 
-  private allFragments?: ExtendedFragment[];
+  // private allFragments?: ExtendedFragment[];
   private getAllFragments(): ExtendedFragment[] {
     const allFragments: ExtendedFragment[] = [];
     const nFeatures = this.data.length;
@@ -284,14 +284,20 @@ class NightingaleTrackCanvas extends withManager(
         }
       }
     }
-    allFragments.sort((a, b) => a.start - b.start);
+    // allFragments.sort((a, b) => a.start - b.start);
     return allFragments;
+  }
+  private fragmentCollection?: RangeCollection<ExtendedFragment>;
+  private getFragmentCollection(): RangeCollection<ExtendedFragment> {
+    const fragments = this.getAllFragments();
+    return new RangeCollection(fragments, { start: f => f.start, stop: f => f.end + 1 });
   }
 
   protected createFeatures() {
     if (this.foo?.includes("no-features")) return;
 
-    this.allFragments = this.getAllFragments();
+    // this.allFragments = this.getAllFragments();
+    this.fragmentCollection = this.getFragmentCollection();
 
     if (!this.seqG) return;
     const featuresG = this.seqG.selectAll("g.feature-group").data(this.#data);
@@ -402,7 +408,7 @@ class NightingaleTrackCanvas extends withManager(
     const canvasWidth = this.canvasCtx.canvas.width;
     const canvasHeight = this.canvasCtx.canvas.height;
     this.canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    if (!this.allFragments) return;
+    if (!this.fragmentCollection) return;
     const baseWidth = this.getSingleBaseWidth();
     const height = this.layoutObj?.getFeatureHeight() ?? 0;
     const featureYs: Record<number, number> = {};
@@ -411,16 +417,9 @@ class NightingaleTrackCanvas extends withManager(
     const rightEdgeSeq = this.xScale?.invert(canvasWidth - this["margin-left"]) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
 
-    const start = 0, end = this.allFragments.length;
-    // This assumes all fragments have length 1!:
-    // const start = findPredecessorIndex(this.allFragments, Math.ceil(leftEdgeSeq), f => f.start + 1);
-    // const end = findPredecessorIndex(this.allFragments, Math.floor(rightEdgeSeq) + 1, f => f.start);
-    // TODO store fragments in a smart structure to filter visible quickly without 
-    for (let i = start; i < end; i++) {
-      const fragment: ExtendedFragment = this.allFragments[i];
+    for (const fragment of this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq)) {
       const iFeature = fragment.featureIndex;
       const endExcl = (fragment.end ?? fragment.start) + 1;
-      if (endExcl < leftEdgeSeq || fragment.start > rightEdgeSeq) continue;
       const x = this.getXFromSeqPosition(fragment.start); // TODO try calculate from this["margin-left"], this.xScale.domain, this.xScale.range?
       const fragmentLength = endExcl - fragment.start;
       const width = fragmentLength * baseWidth;

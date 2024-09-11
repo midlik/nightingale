@@ -146,7 +146,8 @@ function sortBy<T, V>(array: T[], key: ((item: T) => V) = (e => e as unknown as 
     });
 }
 
-/** Data structure for storing integer intervals (ranges) and efficiently retrieving a subset of ranges which overlap with another interval. */
+/** Data structure for storing integer intervals (ranges) and efficiently retrieving a subset of ranges which overlap with another (query) interval.
+ * Not suited for storing float intervals, but query interval can be float. */
 export class RangeCollection<T> {
     protected readonly items: T[];
     protected readonly starts: number[];
@@ -182,13 +183,13 @@ export class RangeCollection<T> {
     }
     private _tmpArrays: Record<number, number[]> = {};
 
-    /** Get all ranges that overlap by at least one position with interval [start, stop).
+    /** Get all ranges that overlap with interval [start, stop).
      * Does not preserve original order of the ranges!
      * Instead sorts the ranges by their start (ranges with the same start are sorted by decreasing length). */
     overlappingItems(start: number, stop: number): T[] {
         return this.overlappingItemIndices(start, stop).map(i => this.items[i]);
     }
-    /** Get indices of all ranges that overlap by at least one position with interval [start, stop).
+    /** Get indices of all ranges that overlap with interval [start, stop).
      * Does not preserve original order of the ranges!
      * Instead sorts the ranges by their start (ranges with the same start are sorted by decreasing length). */
     overlappingItemIndices(start: number, stop: number): number[] {
@@ -198,8 +199,8 @@ export class RangeCollection<T> {
     private overlappingItemIndicesInBin(binSpan: number, start: number, stop: number, out: number[]): number[] {
         out.length = 0;
         const bin = this.bins[binSpan];
-        const from = findPredecessorIndex(bin, start - binSpan + 1, i => this.starts[i]);
-        const to = findPredecessorIndex(bin, stop, i => this.starts[i]);
+        const from = findPredecessorIndex(bin, Math.floor(start) - binSpan + 1, i => this.starts[i]);
+        const to = findPredecessorIndex(bin, Math.ceil(stop), i => this.starts[i]);
         for (let j = from; j < to; j++) {
             const i = bin[j];
             if (this.stops[i] > start) {

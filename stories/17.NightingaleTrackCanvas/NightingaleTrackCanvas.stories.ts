@@ -6,8 +6,13 @@ import { range } from "../../packages/nightingale-track-canvas/src/helpers";
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
+const N_TRACKS = 200;
+// const N_TRACKS = 2000;
+
+const N_SEQ_REPEAT = 1;
+
 const seq = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
-const defaultSequence = repStr(seq, 1);
+const defaultSequence = repStr(seq, N_SEQ_REPEAT);
 function repStr(str: string, n: number) {
   return new Array(n).fill(0).map(() => str).join('');
 }
@@ -74,7 +79,7 @@ const perResidueData = range(defaultSequence.length).map(i => ({
 }));
 
 const spanLength = 10;
-const spanData = range(defaultSequence.length / spanLength).map((_, i) => ({
+const spanData = range(defaultSequence.length / spanLength).map(i => ({
   accession: `feature${i}`,
   start: i * spanLength + 1,
   end: (i + 1) * spanLength - 1,
@@ -89,10 +94,7 @@ const spanData = range(defaultSequence.length / spanLength).map((_, i) => ({
 const data = perResidueData;
 
 
-const N_TRACKS = 1;
-// const N_TRACKS = 2000;
 console.time("Loading all")
-
 export const ManyTracks = () => {
   const args = {
     "min-width": 500,
@@ -175,6 +177,7 @@ export const ManyTracks = () => {
   </div>
 `;
 }
+
 ManyTracks.play = async () => {
   console.timeEnd("Loading all")
   console.time("play")
