@@ -10,7 +10,7 @@ export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 const N_TRACKS = 1;
 // const N_TRACKS = 2000;
 
-const N_SEQ_REPEAT = 5;
+const N_SEQ_REPEAT = 1;
 
 const seq = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
 const defaultSequence = repStr(seq, N_SEQ_REPEAT);
@@ -112,7 +112,6 @@ export const ManyTracks = () => {
     navigationHeight: 50,
     sequenceHeight: 30,
     trackHeight: 18,
-    foo: "track features refresh",
   };
 
   const tracks = new Array(N_TRACKS).fill(0).map((_, i) =>
@@ -129,7 +128,6 @@ export const ManyTracks = () => {
         highlight-color="${args["highlight-color"]}"
         margin-color=${args["margin-color"]}
         use-ctrl-to-zoom
-        foo=${args.foo + " track-" + i}
       >
       </nightingale-track>
     </div>
@@ -145,7 +143,6 @@ export const ManyTracks = () => {
         highlight-color="${args["highlight-color"]}"
         margin-color=${args["margin-color"]}
         use-ctrl-to-zoom
-        foo=${args.foo + " track-" + i}
       >
       </nightingale-track-canvas>
     </div>`
