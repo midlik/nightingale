@@ -261,7 +261,6 @@ class NightingaleTrackCanvas extends withManager(
     }
     if (this.SVG_TAG === "canvas") {
       const ctx = (this.svg as unknown as Selection<HTMLCanvasElement, unknown, HTMLElement, unknown>).node()?.getContext("2d");
-      // console.log("getting canvas ctx", ctx)
       if (ctx) {
         ctx.canvas.width = this.width;
         ctx.canvas.height = this.height;
@@ -408,11 +407,14 @@ class NightingaleTrackCanvas extends withManager(
     const canvasWidth = this.canvasCtx.canvas.width;
     const canvasHeight = this.canvasCtx.canvas.height;
     this.canvasCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+    this.canvasCtx.lineWidth = 0.5;
     if (!this.fragmentCollection) return;
     const baseWidth = this.getSingleBaseWidth();
     const height = this.layoutObj?.getFeatureHeight() ?? 0;
     const featureYs: Record<number, number> = {};
-    const featureColors: Record<number, string> = {};
+    const featureStrokeColors: Record<number, string> = {};
+    const featureFillColors: Record<number, string> = {};
+    const featureOpacities: Record<number, number> = {};
     const leftEdgeSeq = this.xScale?.invert(-this["margin-left"]) ?? -Infinity;
     const rightEdgeSeq = this.xScale?.invert(canvasWidth - this["margin-left"]) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
@@ -424,8 +426,11 @@ class NightingaleTrackCanvas extends withManager(
       const fragmentLength = endExcl - fragment.start;
       const width = fragmentLength * baseWidth;
       const y = featureYs[iFeature] ??= (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
-      this.canvasCtx.fillStyle = featureColors[iFeature] ??= this.getFeatureFillColor(this.data[iFeature]);
+      this.canvasCtx.fillStyle = featureFillColors[iFeature] ??= this.getFeatureFillColor(this.data[iFeature]);
+      this.canvasCtx.strokeStyle = featureStrokeColors[iFeature] ??= this.getFeatureColor(this.data[iFeature]);
+      this.canvasCtx.globalAlpha = featureOpacities[iFeature] ??= (this.data[iFeature].opacity ?? 0.9);
       this.canvasCtx.fillRect(x, y, width, height);
+      this.canvasCtx.strokeRect(x, y, width, height);
     }
     // console.timeEnd("canvasDrawFeatures")
   }

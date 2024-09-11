@@ -2,14 +2,15 @@ import { Meta } from "@storybook/web-components";
 import { html } from "lit-html";
 import "../../packages/nightingale-track-canvas/src/index.ts";
 import { range } from "../../packages/nightingale-track-canvas/src/helpers";
+import { rgb } from "d3";
 
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
-const N_TRACKS = 200;
+const N_TRACKS = 1;
 // const N_TRACKS = 2000;
 
-const N_SEQ_REPEAT = 1;
+const N_SEQ_REPEAT = 5;
 
 const seq = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
 const defaultSequence = repStr(seq, N_SEQ_REPEAT);
@@ -64,6 +65,7 @@ const defaultData = [
   },
 ];
 
+
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
 // const ResidueColors = ['#111111', '#ffeedd'];
 const perResidueData = range(defaultSequence.length).map(i => ({
@@ -71,11 +73,10 @@ const perResidueData = range(defaultSequence.length).map(i => ({
   start: i + 1,
   end: i + 1,
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
-  // color: ResidueColors[i % ResidueColors.length],
-  color: '#000000',
+  color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
   // shape: 'triangle',
-  // opacity: 1,
+  opacity: 0.75,
 }));
 
 const spanLength = 10;
@@ -114,8 +115,24 @@ export const ManyTracks = () => {
   const tracks = new Array(N_TRACKS).fill(0).map((_, i) =>
     html`
     <div style="line-height: 0; margin-top: 2px;">
-      <nightingale-track-canvas
+      <nightingale-track
         id="track-${i}"
+        min-width="${args["min-width"]}"
+        height=${args.trackHeight}
+        length="${args.length}"
+        display-start="${args["display-start"]}"
+        display-end="${args["display-end"]}"
+        highlight-event="onmouseover"
+        highlight-color="${args["highlight-color"]}"
+        margin-color=${args["margin-color"]}
+        use-ctrl-to-zoom
+        foo=${args.foo + " track-" + i}
+      >
+      </nightingale-track>
+    </div>
+    <div style="line-height: 0; margin-top: 2px;">
+      <nightingale-track-canvas
+        id="canvas-track-${i}"
         min-width="${args["min-width"]}"
         height=${args.trackHeight}
         length="${args.length}"
@@ -185,11 +202,16 @@ ManyTracks.play = async () => {
   console.log(`Initializing ${N_TRACKS} tracks (${N_TRACKS * data.length} items)`)
   console.time("Initializing")
   for (let i = 0; i < N_TRACKS; i++) {
-    const track = document.getElementById(`track-${i}`);
-    if (track) {
-      (track as any).data = data;
-    }
+    setTrackData(`track-${i}`, data);
+    setTrackData(`canvas-track-${i}`, data);
   }
   console.timeEnd("Initializing")
   console.timeEnd("play")
 };
+
+function setTrackData(trackId: string, data: any) {
+  const track = document.getElementById(trackId);
+  if (track) {
+    (track as any).data = data;
+  }
+}
