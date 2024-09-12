@@ -9,6 +9,8 @@ export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
 const N_TRACKS = 1;
 // const N_TRACKS = 2000;
+const SHOW_NIGHTINGALE_TRACK = true;
+const SHOW_NIGHTINGALE_TRACK_CANVAS = true;
 
 const N_SEQ_REPEAT = 1;
 
@@ -66,9 +68,9 @@ const defaultData = [
 ];
 
 
-// const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
+const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
 // const ResidueColors = ['#111111', '#ffeedd'];
-const ResidueColors = ['green'];
+// const ResidueColors = ['green'];
 const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
   start: i + 1,
@@ -114,39 +116,44 @@ export const ManyTracks = () => {
     trackHeight: 18,
   };
 
-  const tracks = new Array(N_TRACKS).fill(0).map((_, i) =>
-    html`
-    <div style="line-height: 0; margin-top: 2px;">
-      <nightingale-track
-        id="track-${i}"
-        min-width="${args["min-width"]}"
-        height=${args.trackHeight}
-        length="${args.length}"
-        display-start="${args["display-start"]}"
-        display-end="${args["display-end"]}"
-        highlight-event="onmouseover"
-        highlight-color="${args["highlight-color"]}"
-        margin-color=${args["margin-color"]}
-        use-ctrl-to-zoom
-      >
-      </nightingale-track>
-    </div>
-    <div style="line-height: 0; margin-top: 2px;">
-      <nightingale-track-canvas
-        id="canvas-track-${i}"
-        min-width="${args["min-width"]}"
-        height=${args.trackHeight}
-        length="${args.length}"
-        display-start="${args["display-start"]}"
-        display-end="${args["display-end"]}"
-        highlight-event="onmouseover"
-        highlight-color="${args["highlight-color"]}"
-        margin-color=${args["margin-color"]}
-        use-ctrl-to-zoom
-      >
-      </nightingale-track-canvas>
-    </div>`
-  );
+  const tracks = range(N_TRACKS).map(i => {
+    const nightingaleTrack = html`
+      <div style="line-height: 0; margin-top: 2px;">
+        <nightingale-track
+          id="track-${i}"
+          min-width="${args["min-width"]}"
+          height=${args.trackHeight}
+          length="${args.length}"
+          display-start="${args["display-start"]}"
+          display-end="${args["display-end"]}"
+          highlight-event="onmouseover"
+          highlight-color="${args["highlight-color"]}"
+          margin-color=${args["margin-color"]}
+          use-ctrl-to-zoom
+        >
+        </nightingale-track>
+      </div>`;
+    const nightingaleTrackCanvas = html`
+      <div style="line-height: 0; margin-top: 2px;">
+        <nightingale-track-canvas
+          id="canvas-track-${i}"
+          min-width="${args["min-width"]}"
+          height=${args.trackHeight}
+          length="${args.length}"
+          display-start="${args["display-start"]}"
+          display-end="${args["display-end"]}"
+          highlight-event="onmouseover"
+          highlight-color="${args["highlight-color"]}"
+          margin-color=${args["margin-color"]}
+          use-ctrl-to-zoom
+        >
+        </nightingale-track-canvas>
+      </div>`;
+    return html`
+      ${SHOW_NIGHTINGALE_TRACK ? nightingaleTrack : ''}
+      ${SHOW_NIGHTINGALE_TRACK_CANVAS ? nightingaleTrackCanvas : ''}
+      `;
+  });
 
   return html`
   <nightingale-saver
@@ -157,7 +164,7 @@ export const ManyTracks = () => {
   Use Ctrl+scroll to zoom.
   <div id="root">
     <nightingale-manager>
-      <div style="display:flex; flex-direction: column;    width: 100%;">
+      <div style="display:flex; flex-direction: column; width: 100%;">
         <div style="line-height: 0">
           <nightingale-navigation
             id="navigation"
