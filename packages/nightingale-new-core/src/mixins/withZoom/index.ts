@@ -19,9 +19,9 @@ import withResizable, { WithResizableInterface } from "../withResizable";
 
 export interface WithZoomInterface
   extends WithDimensionsInterface,
-    withPositionInterface,
-    withMarginInterface,
-    WithResizableInterface {
+  withPositionInterface,
+  withMarginInterface,
+  WithResizableInterface {
   xScale?: ScaleLinear<number, number>;
   svg?: Selection<
     SVGSVGElement,
@@ -117,12 +117,12 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
     }
 
     updateScaleDomain() {
-      this.xScale = scaleLinear()
+      this.originXScale = scaleLinear()
         // The max width should match the start of the n+1 base
         .domain([1, (this.length || 0) + 1])
         .range([0, this.getWidthWithMargins()]);
-      this.originXScale = this.xScale?.copy();
-      this.tmpXScale = this.xScale?.copy();
+      this.tmpXScale = this.originXScale.copy();
+      this.xScale ??= this.originXScale.copy(); // Do not force set `xScale`, will be updated in `zoomed`
       this.zoom?.translateExtent([
         [0, 0],
         [this.getWidthWithMargins(), 0],
@@ -208,7 +208,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
         1,
         // +1 because the displayend base should be included
         (this.length || 0) /
-          (1 + (this["display-end"] || 0) - (this["display-start"] || 0)),
+        (1 + (this["display-end"] || 0) - (this["display-start"] || 0)),
       );
       // The deltaX gets calculated using the position of the first base to display in original scale
       const dx = -this.originXScale(this["display-start"] || 0);
