@@ -8,7 +8,6 @@ import "../../packages/nightingale-track-canvas/src/index";
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
 const N_TRACKS = 1;
-// const N_TRACKS = 2000;
 const SHOW_NIGHTINGALE_TRACK = true;
 const SHOW_NIGHTINGALE_TRACK_CANVAS = true;
 
@@ -71,6 +70,14 @@ const defaultData = [
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
 // const ResidueColors = ['#111111', '#ffeedd'];
 // const ResidueColors = ['green'];
+const ResidueShapes = [
+  "rectangle", "roundRectangle", "bridge", "line",
+  "discontinuosEnd", "discontinuos", "discontinuosStart",
+  "helix", "strand",
+  "circle", "triangle", "diamond", "pentagon", "hexagon",
+  "chevron", "catFace", "arrow", "wave", "doubleBar",
+  "xxx",
+];
 const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
   start: i + 1,
@@ -80,7 +87,7 @@ const perResidueData = range(defaultSequence.length).map(i => ({
   fill: ResidueColors[i % ResidueColors.length],
   // color: '#000000',
   // fill: '#00ffee',
-  // shape: 'triangle',
+  shape: ResidueShapes[i % ResidueShapes.length],
   opacity: 0.75,
 }));
 
@@ -90,14 +97,15 @@ const spanData = range(defaultSequence.length / spanLength).map(i => ({
   start: i * spanLength + 1,
   end: (i + 1) * spanLength - 1,
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
-  // color: ResidueColors[i % ResidueColors.length],
-  color: '#000000',
+  color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
-  shape: 'circle',
-  opacity: 1,
+  shape: ResidueShapes[i % ResidueShapes.length],
+  // shape: 'rect',
+  opacity: 0.75,
 }));
 
-const data = perResidueData;
+const data = spanData;
+// const data = [...spanData, ...perResidueData,];
 
 
 console.time("Loading all")
@@ -111,9 +119,10 @@ export const ManyTracks = () => {
     "display-end": defaultSequence.length,
     "highlight-color": "#EB3BFF22",
     "margin-color": "transparent",
+    layout: "non-overlapping",
     navigationHeight: 50,
     sequenceHeight: 30,
-    trackHeight: 18,
+    trackHeight: 24,
   };
 
   const tracks = range(N_TRACKS).map(i => {
@@ -130,6 +139,7 @@ export const ManyTracks = () => {
           highlight-color="${args["highlight-color"]}"
           margin-color=${args["margin-color"]}
           use-ctrl-to-zoom
+          layout="${args.layout}"
         >
         </nightingale-track>
       </div>`;
@@ -146,6 +156,7 @@ export const ManyTracks = () => {
           highlight-color="${args["highlight-color"]}"
           margin-color=${args["margin-color"]}
           use-ctrl-to-zoom
+          layout="${args.layout}"
         >
         </nightingale-track-canvas>
       </div>`;
