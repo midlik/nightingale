@@ -2,7 +2,7 @@ import { customElementOnce } from "@nightingale-elements/nightingale-new-core";
 import NightingaleTrack, { FeatureLocation, Shapes } from "@nightingale-elements/nightingale-track";
 import { select, Selection } from "d3";
 import { html } from "lit";
-import { drawLine, drawRange, drawSymbol, drawUnknown } from "./helpers/draw-shapes";
+import { drawRange, drawSymbol, drawUnknown } from "./helpers/draw-shapes";
 import { RangeCollection, Refresher } from "./helpers/utils";
 
 
@@ -121,17 +121,20 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const canvasWidth = ctx.canvas.width;
     const canvasHeight = ctx.canvas.height;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ctx.lineWidth = this.canvasScale * 1;//0.5;
     if (!this.fragmentCollection) return;
-    const baseWidth = this.getSingleBaseWidth();
-    const height = this.canvasScale * (this.layoutObj?.getFeatureHeight() ?? 0);
+
+    const scale = this.canvasScale;
+    ctx.lineWidth = scale * 1;
+    const baseWidth = scale * this.getSingleBaseWidth();
+    const height = scale * (this.layoutObj?.getFeatureHeight() ?? 0);
+    const optXPadding = Math.min(scale * 1.5, 0.25 * baseWidth); // to avoid overlap/touch for certain shapes (line, bridge, helix, strand)
     const featureYs: Record<number, number> = {};
     const featureStrokeColors: Record<number, string> = {};
     const featureFillColors: Record<number, string> = {};
     const featureOpacities: Record<number, number> = {};
     const featureShapes: Record<number, Shapes> = {};
     // const leftEdgeSeq = this.xScale?.invert(0) ?? -Infinity; // debug
-    // const rightEdgeSeq = this.xScale?.invert((canvasWidth / this.canvasScale) - 2 * this["margin-left"]) ?? Infinity; // debug
+    // const rightEdgeSeq = this.xScale?.invert((canvasWidth / scale) - 2 * this["margin-left"]) ?? Infinity; // debug
     const leftEdgeSeq = this.xScale?.invert(-this["margin-left"]) ?? -Infinity;
     const rightEdgeSeq = this.xScale?.invert(canvasWidth - this["margin-left"]) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
@@ -139,32 +142,31 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     for (const fragment of this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq)) {
       const iFeature = fragment.featureIndex;
       const endExcl = (fragment.end ?? fragment.start) + 1;
-      const x = this.canvasScale * this.getXFromSeqPosition(fragment.start); // TODO try calculate from this["margin-left"], this.xScale.domain, this.xScale.range?
       const fragmentLength = endExcl - fragment.start;
-      const width = this.canvasScale * fragmentLength * baseWidth;
-      const y = featureYs[iFeature] ??= this.canvasScale * (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
+      const x = scale * this.getXFromSeqPosition(fragment.start); // TODO try calculate from this["margin-left"], this.xScale.domain, this.xScale.range?
+      const width = fragmentLength * baseWidth;
+      const y = featureYs[iFeature] ??= scale * (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
       const shape = featureShapes[iFeature] ??= this.getShape(this.data[iFeature]);
       ctx.fillStyle = featureFillColors[iFeature] ??= this.getFeatureFillColor(this.data[iFeature]);
       ctx.strokeStyle = featureStrokeColors[iFeature] ??= this.getFeatureColor(this.data[iFeature]);
       ctx.globalAlpha = featureOpacities[iFeature] ??= (this.data[iFeature].opacity ?? 0.9);
 
-      const rangeDrawn = drawRange(ctx, shape, x, y, width, height);
+      const rangeDrawn = drawRange(ctx, shape, x, y, width, height, optXPadding, fragmentLength);
       if (!rangeDrawn) {
         const cx = x + 0.5 * width;
         const cy = y + 0.5 * height;
-        const r = this.canvasScale * 0.5 * SYMBOL_SIZE;
+        const r = scale * 0.5 * SYMBOL_SIZE;
         const symbolDrawn = drawSymbol(ctx, shape, cx, cy, r);
         if (!symbolDrawn) {
           this.printUnknownShapeWarning(shape);
           drawUnknown(ctx, cx, cy, r);
         }
         if (fragmentLength > 1) {
-          const gap = this.canvasScale * Math.min(1, 0.25 * baseWidth);
-          drawLine(ctx, x + gap, cy, x + width - gap, cy);
+          drawRange(ctx, 'line', x, y, width, height, optXPadding, fragmentLength);
         }
       }
     }
-    console.timeEnd("canvasDrawFeatures")
+    // console.timeEnd("canvasDrawFeatures")
   }
   private _unknownShapeWarningPrinted = new Set<Shapes>();
   private printUnknownShapeWarning(shape: Shapes): void {

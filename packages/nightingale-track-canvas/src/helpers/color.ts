@@ -190,7 +190,7 @@ const RGB_MASK = (1 << 24) - 1;
 
 
 /** X11 color names http://www.w3.org/TR/css3-color/#svg-color */
-export const ColorNames: { [name: string]: Color } = {
+export const ColorNames = {
     aliceblue: 0xf0f8ff | OPAQUE,
     antiquewhite: 0xfaebd7 | OPAQUE,
     aqua: 0x00ffff | OPAQUE,
@@ -346,4 +346,4 @@ export const ColorNames: { [name: string]: Color } = {
     whitesmoke: 0xf5f5f5 | OPAQUE,
     yellow: 0xffff00 | OPAQUE,
     yellowgreen: 0x9acd32 | OPAQUE,
-} as any;
+} as unknown as { [name: string]: Color };

@@ -1,13 +1,7 @@
-import { Shapes } from "@nightingale-elements/nightingale-track";
+import { type Shapes } from "@nightingale-elements/nightingale-track";
 
 
-export function drawLine(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number): void {
-  ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y1);
-  ctx.stroke();
-}
-
+/** Draw an "unknown shape" symbol (a question mark). */
 export function drawUnknown(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
   ctx.beginPath();
   ctx.arc(cx, cy - 0.5 * r, 0.2 * r, 0.25 * Math.PI, 1 * Math.PI, true);
@@ -27,9 +21,11 @@ export function drawUnknown(ctx: CanvasRenderingContext2D, cx: number, cy: numbe
   ctx.stroke();
 }
 
-/** Try to draw a symbol and return true. Draw nothing and return false if `shape` is not supported. */
+/** Try to draw a symbol and return true.
+ * Draw nothing and return false if `shape` is not supported.
+ * This only draws "symbols", i.e. shapes that do not stretch when zoomed in. */
 export function drawSymbol(ctx: CanvasRenderingContext2D, shape: Shapes, cx: number, cy: number, r: number): boolean {
-  const drawer = DrawSymbol[shape];
+  const drawer = SymbolDrawers[shape];
   if (drawer) {
     drawer(ctx, cx, cy, r);
     return true;
@@ -38,11 +34,13 @@ export function drawSymbol(ctx: CanvasRenderingContext2D, shape: Shapes, cx: num
   }
 }
 
-/** Try to draw a range and return true. Draw nothing and return false if `shape` is not supported. */
-export function drawRange(ctx: CanvasRenderingContext2D, shape: Shapes, x: number, y: number, width: number, height: number): boolean {
-  const drawer = DrawRange[shape];
+/** Try to draw a range and return true.
+ * Draw nothing and return false if `shape` is not supported.
+ * This only draws "ranges", i.e. shapes that stretch when zoomed in. */
+export function drawRange(ctx: CanvasRenderingContext2D, shape: Shapes, x: number, y: number, width: number, height: number, optXPadding: number, fragmentLength: number): boolean {
+  const drawer = RangeDrawers[shape];
   if (drawer) {
-    drawer(ctx, x, y, width, height);
+    drawer(ctx, x, y, width, height, optXPadding, fragmentLength);
     return true;
   } else {
     return false;
@@ -52,7 +50,7 @@ export function drawRange(ctx: CanvasRenderingContext2D, shape: Shapes, x: numbe
 
 type SymbolDrawer = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
 
-const DrawSymbol: Partial<Record<Shapes, SymbolDrawer>> = {
+const SymbolDrawers: Partial<Record<Shapes, SymbolDrawer>> = {
   circle(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, 2 * Math.PI);
@@ -60,7 +58,7 @@ const DrawSymbol: Partial<Record<Shapes, SymbolDrawer>> = {
     ctx.stroke();
   },
 
-  /** This is actually not an equilateral triangle, therefore not using `drawPolygon` */
+  /** This is not an equilateral triangle, therefore not using `drawPolygon` */
   triangle(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
     ctx.beginPath();
     ctx.moveTo(cx, cy - r);
@@ -121,6 +119,7 @@ const DrawSymbol: Partial<Record<Shapes, SymbolDrawer>> = {
     ctx.stroke();
   },
 
+  /** This does not look like an arrow. It is something similar to a kite. */
   arrow(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
     const r01 = 0.1 * r;
     const r04 = 0.4 * r;
@@ -148,6 +147,7 @@ const DrawSymbol: Partial<Record<Shapes, SymbolDrawer>> = {
     ctx.stroke();
   },
 
+  /** This does not look like a double bar. It is a rhomboid. */
   doubleBar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
     ctx.beginPath();
     ctx.moveTo(cx, cy - r);
@@ -161,15 +161,176 @@ const DrawSymbol: Partial<Record<Shapes, SymbolDrawer>> = {
 };
 
 
-type RangeDrawer = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) => void;
+type RangeDrawer = (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, optXPadding: number, fragmentLength: number) => void;
 
-const DrawRange: Partial<Record<Shapes, RangeDrawer>> = {
+const RangeDrawers: Partial<Record<Shapes, RangeDrawer>> = {
   rectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
     ctx.fillRect(x, y, width, height);
     ctx.strokeRect(x, y, width, height);
-  }
+  },
+
+  roundRectangle(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    const ry = 0.5 * height; // In NightingaleTrack, this is harcoded 6px
+    const rx = Math.min(ry, 0.5 * width);
+    ctx.beginPath();
+    ctx.ellipse(x + rx, y + ry, rx, ry, 0, Math.PI, 1.5 * Math.PI, false);
+    ctx.ellipse(x + width - rx, y + ry, rx, ry, 0, 1.5 * Math.PI, 0, false);
+    ctx.ellipse(x + width - rx, y + height - ry, rx, ry, 0, 0, 0.5 * Math.PI, false);
+    ctx.ellipse(x + rx, y + height - ry, rx, ry, 0, 0.5 * Math.PI, Math.PI, false);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  },
+
+  line(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xPadding: number): void {
+    const cy = y + 0.5 * height;
+    drawLine(ctx, x + xPadding, cy, x + width - xPadding, cy);
+  },
+
+  bridge(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xPadding: number, fragmentLength: number): void {
+    x += xPadding;
+    width -= 2 * xPadding;
+
+    if (fragmentLength === 1) {
+      // This does not look like a bridge
+      ctx.beginPath();
+      ctx.moveTo(x, y + 0.5 * height);
+      ctx.lineTo(x + 0.5 * width, y + 0.5 * height);
+      ctx.lineTo(x + 0.5 * width, y);
+      ctx.lineTo(x + 0.5 * width, y + 0.5 * height);
+      ctx.lineTo(x + width, y + 0.5 * height);
+      ctx.lineTo(x + width, y + height);
+      ctx.lineTo(x, y + height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      // This looks like a bridge
+      const beam = 0.2 * height; // In NightingaleTrack, this is harcoded 2px
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + width, y);
+      ctx.lineTo(x + width, y + height);
+      ctx.lineTo(x + width, y + beam);
+      ctx.lineTo(x, y + beam);
+      ctx.lineTo(x, y + height);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  },
+
+  discontinuosStart(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    const qy = 0.2 * height;
+    const qx = Math.min(qy, 0.5 * width);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + qx, y + qy);
+    ctx.lineTo(x, y + 2 * qy);
+    ctx.lineTo(x + qx, y + 3 * qy);
+    ctx.lineTo(x, y + 4 * qy);
+    ctx.lineTo(x + qx, y + height);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x + width, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  },
+
+  discontinuosEnd(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    const qy = 0.2 * height;
+    const qx = Math.min(qy, 0.5 * width);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y + height);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x + width - qx, y + 4 * qy);
+    ctx.lineTo(x + width, y + 3 * qy);
+    ctx.lineTo(x + width - qx, y + 2 * qy);
+    ctx.lineTo(x + width, y + 1 * qy);
+    ctx.lineTo(x + width - qx, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  },
+
+  discontinuos(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+    const qy = 0.2 * height;
+    const qx = Math.min(qy, 0.5 * width);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + qx, y + qy);
+    ctx.lineTo(x, y + 2 * qy);
+    ctx.lineTo(x + qx, y + 3 * qy);
+    ctx.lineTo(x, y + 4 * qy);
+    ctx.lineTo(x + qx, y + height);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x + width - qx, y + 4 * qy);
+    ctx.lineTo(x + width, y + 3 * qy);
+    ctx.lineTo(x + width - qx, y + 2 * qy);
+    ctx.lineTo(x + width, y + 1 * qy);
+    ctx.lineTo(x + width - qx, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  },
+
+  helix(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xPadding: number): void {
+    x += xPadding;
+    width -= 2 * xPadding;
+
+    const w = Math.min(0.4 * height, width);
+    const n = Math.floor(width / w);
+    const top = y + 0.05 * height;
+    const bottom = y + 0.95 * height;
+    ctx.beginPath();
+    ctx.moveTo(x, bottom);
+    for (let i = 0; i < n; i++) {
+      const x_ = x + i * w;
+      ctx.bezierCurveTo(
+        x_ + 0.75 * w, bottom,
+        x_ + 1.25 * w, top,
+        x_ + 0.5 * w, top);
+      ctx.bezierCurveTo(
+        x_, top,
+        x_ + 0.5 * w, bottom,
+        x_ + w, bottom);
+    }
+    ctx.lineTo(x + width, bottom);
+    ctx.fill();
+    ctx.stroke();
+  },
+
+  strand(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, xPadding: number): void {
+    x += xPadding;
+    width -= 2 * xPadding
+
+    const q = 0.25 * height;
+    const head = Math.min(0.5 * height, 0.75 * width);
+    const delta = 0.01 * head; // to avoid stroke of a too sharp angle protruding out of the track
+    ctx.beginPath();
+    ctx.moveTo(x, y + q);
+    ctx.lineTo(x + width - head, y + q);
+    ctx.lineTo(x + width - head, y);
+    ctx.lineTo(x + width - head + delta, y);
+    ctx.lineTo(x + width, y + 0.5 * height);
+    ctx.lineTo(x + width - head + delta, y + height);
+    ctx.lineTo(x + width - head, y + height);
+    ctx.lineTo(x + width - head, y + height - q);
+    ctx.lineTo(x, y + height - q);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  },
 };
 
+
+function drawLine(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+}
 
 function drawPolygon(ctx: CanvasRenderingContext2D, n: number, cx: number, cy: number, r: number): void {
   ctx.beginPath();

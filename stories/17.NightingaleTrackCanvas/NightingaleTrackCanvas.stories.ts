@@ -68,15 +68,15 @@ const defaultData = [
 
 
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
+// const ResidueColors = ["#eeeeff", "#ddddff", "#ccccff", "#bbbbff", "#aaaaff", "#8888ff", "#6666ff", "#4444ff", "#2222ff", "#0000ff",];
 // const ResidueColors = ['#111111', '#ffeedd'];
 // const ResidueColors = ['green'];
 const ResidueShapes = [
-  "rectangle", "roundRectangle", "bridge", "line",
+  "rectangle", "roundRectangle", "line", "rectangle", "bridge",
   "discontinuosEnd", "discontinuos", "discontinuosStart",
   "helix", "strand",
   "circle", "triangle", "diamond", "pentagon", "hexagon",
   "chevron", "catFace", "arrow", "wave", "doubleBar",
-  "xxx",
 ];
 const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
@@ -88,7 +88,7 @@ const perResidueData = range(defaultSequence.length).map(i => ({
   // color: '#000000',
   // fill: '#00ffee',
   shape: ResidueShapes[i % ResidueShapes.length],
-  opacity: 0.75,
+  opacity: 0.9,
 }));
 
 const spanLength = 10;
@@ -99,9 +99,8 @@ const spanData = range(defaultSequence.length / spanLength).map(i => ({
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
   color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
-  shape: ResidueShapes[i % ResidueShapes.length],
-  // shape: 'rect',
-  opacity: 0.75,
+  shape: ResidueShapes[Math.floor(i / 2) % ResidueShapes.length],
+  opacity: 0.9,
 }));
 
 const data = spanData;
@@ -120,6 +119,7 @@ export const ManyTracks = () => {
     "highlight-color": "#EB3BFF22",
     "margin-color": "transparent",
     layout: "non-overlapping",
+    // layout: "default",
     navigationHeight: 50,
     sequenceHeight: 30,
     trackHeight: 24,
