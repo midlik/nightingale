@@ -1,12 +1,13 @@
-import { customElementOnce } from "@nightingale-elements/nightingale-new-core";
+import { createEvent, customElementOnce } from "@nightingale-elements/nightingale-new-core";
 import NightingaleTrack, { FeatureLocation, Shapes } from "@nightingale-elements/nightingale-track";
-import { select, Selection } from "d3";
+import { BaseType, select, Selection } from "d3";
 import { html } from "lit";
-import { drawRange, drawSymbol, drawUnknown } from "./helpers/draw-shapes";
-import { RangeCollection, Refresher } from "./helpers/utils";
+import { drawRange, drawSymbol, drawUnknown, shapeCategory } from "./helpers/draw-shapes";
+import { last, RangeCollection, Refresher } from "./helpers/utils";
 
 
-type ExtendedFragment = FeatureLocation["fragments"][number] & { featureIndex: number, location: FeatureLocation };
+type Fragment = FeatureLocation["fragments"][number]
+type ExtendedFragment = Fragment & { featureIndex: number, location: FeatureLocation };
 
 
 @customElementOnce("nightingale-track-canvas")
@@ -50,6 +51,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     this.canvasCtx = this.canvas.node()?.getContext("2d") ?? undefined;
     this.onDimensionsChange();
     this.createFeatures();
+    this.bindEvents(this.svg);
   }
 
   protected override createFeatures() {
@@ -133,17 +135,17 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const featureFillColors: Record<number, string> = {};
     const featureOpacities: Record<number, number> = {};
     const featureShapes: Record<number, Shapes> = {};
-    // const leftEdgeSeq = this.xScale?.invert(0) ?? -Infinity; // debug
-    // const rightEdgeSeq = this.xScale?.invert((canvasWidth / scale) - 2 * this["margin-left"]) ?? Infinity; // debug
-    const leftEdgeSeq = this.xScale?.invert(-this["margin-left"]) ?? -Infinity;
-    const rightEdgeSeq = this.xScale?.invert(canvasWidth - this["margin-left"]) ?? Infinity;
+    // const leftEdgeSeq = this.getSeqPositionFromX(this["margin-left"]) ?? -Infinity;
+    // const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale - this["margin-left"]) ?? Infinity;
+    const leftEdgeSeq = this.getSeqPositionFromX(0) ?? -Infinity;
+    const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
+    // TODO consider lineWidth and symbol width here
 
     for (const fragment of this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq)) {
       const iFeature = fragment.featureIndex;
-      const endExcl = (fragment.end ?? fragment.start) + 1;
-      const fragmentLength = endExcl - fragment.start;
-      const x = scale * this.getXFromSeqPosition(fragment.start); // TODO try calculate from this["margin-left"], this.xScale.domain, this.xScale.range?
+      const fragmentLength = (fragment.end ?? fragment.start) + 1 - fragment.start;
+      const x = scale * this.getXFromSeqPosition(fragment.start);
       const width = fragmentLength * baseWidth;
       const y = featureYs[iFeature] ??= scale * (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
       const shape = featureShapes[iFeature] ??= this.getShape(this.data[iFeature]);
@@ -155,7 +157,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       if (!rangeDrawn) {
         const cx = x + 0.5 * width;
         const cy = y + 0.5 * height;
-        const r = scale * 0.5 * SYMBOL_SIZE;
+        const r = scale * SYMBOL_RADIUS;
         const symbolDrawn = drawSymbol(ctx, shape, cx, cy, r);
         if (!symbolDrawn) {
           this.printUnknownShapeWarning(shape);
@@ -175,6 +177,93 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       this._unknownShapeWarningPrinted.add(shape);
     }
   }
+
+  /** Inverse of `this.getXFromSeqPosition`. */
+  getSeqPositionFromX(x: number): number | undefined {
+    return this.xScale?.invert(x - this["margin-left"]);
+  }
+
+  private getFragmentAt(svgX: number, svgY: number): ExtendedFragment | undefined {
+    if (!this.fragmentCollection) return undefined;
+    const seqStart = this.getSeqPositionFromX(svgX - SYMBOL_RADIUS);
+    const seqEnd = this.getSeqPositionFromX(svgX + SYMBOL_RADIUS);
+    if (seqStart === undefined || seqEnd === undefined) return undefined;
+
+    const fragments = this.fragmentCollection.overlappingItems(seqStart, seqEnd);
+    const baseWidth = this.getSingleBaseWidth();
+    const featureHeight = this.layoutObj?.getFeatureHeight() ?? 0;
+
+    const isPointed = (fragment: ExtendedFragment) => {
+      const feature = this.data[fragment.featureIndex];
+      const y = this.layoutObj?.getFeatureYPos(feature) ?? 0;
+      const yOK = y <= svgY && svgY <= y + featureHeight;
+      if (!yOK) return false;
+      const fragmentLength = (fragment.end ?? fragment.start) + 1 - fragment.start;
+      const xStart = this.getXFromSeqPosition(fragment.start);
+      const xEnd = xStart + fragmentLength * baseWidth;
+      if (xStart <= svgX && svgX <= xEnd) return true; // pointing at range (for symbol and range shapes)
+      if (shapeCategory(this.getShape(feature)) !== 'range') {
+        // Symbol shapes
+        const xMid = xStart + 0.5 * fragmentLength * baseWidth;
+        if (xMid - SYMBOL_RADIUS <= svgX && svgX <= xMid + SYMBOL_RADIUS) return true; // pointing at symbol (for symbol shapes only)
+      }
+      return false;
+    };
+
+    return last(fragments, isPointed);
+  }
+
+  private bindEvents<T extends BaseType>(target: Selection<T, unknown, BaseType, unknown> | undefined): void {
+    if (!target) return;
+    target.on('click.NightingaleTrackCanvas', (event: MouseEvent) => this.handleClick(event));
+    target.on('mousemove.NightingaleTrackCanvas', (event: MouseEvent) => this.handleMousemove(event));
+    target.on('mouseout.NightingaleTrackCanvas', () => this.handleMouseout());
+  }
+  private handleClick(event: MouseEvent): void {
+    const fragment = this.getFragmentAt(event.offsetX, event.offsetY);
+    if (!fragment) {
+      return; // This is not optimal, but trying to mimic NightingaleTrack behavior
+    }
+    const feature = this.data[fragment.featureIndex];
+    const withHighlight = this.getAttribute("highlight-event") === "onclick";
+    const customEvent = createEvent(
+      "click",
+      feature as unknown as Parameters<(typeof createEvent)>['1'],
+      withHighlight,
+      true,
+      fragment.start,
+      fragment.end ?? fragment.start,
+      event.target instanceof HTMLElement ? event.target : undefined,
+      event,
+      this,
+    );
+    this.dispatchEvent(customEvent);
+  }
+  private handleMousemove(event: MouseEvent): void {
+    const fragment = this.getFragmentAt(event.offsetX, event.offsetY);
+    if (!fragment) {
+      return this.handleMouseout();
+    }
+    const feature = this.data[fragment.featureIndex];
+    const withHighlight = this.getAttribute("highlight-event") === "onmouseover";
+    const customEvent = createEvent(
+      "mouseover",
+      feature as unknown as Parameters<(typeof createEvent)>['1'],
+      withHighlight,
+      false,
+      fragment.start,
+      fragment.end ?? fragment.start,
+      event.target instanceof HTMLElement ? event.target : undefined,
+      event,
+      this,
+    );
+    this.dispatchEvent(customEvent);
+  }
+  private handleMouseout(): void {
+    const withHighlight = this.getAttribute("highlight-event") === "onmouseover";
+    const customEvent = createEvent("mouseout", null, withHighlight);
+    this.dispatchEvent(customEvent);
+  }
 }
 
 
@@ -185,3 +274,4 @@ function getDevicePixelRatio(): number {
 
 // Magic number from packages/nightingale-track/src/FeatureShape.ts:
 const SYMBOL_SIZE = 10;
+const SYMBOL_RADIUS = 0.5 * SYMBOL_SIZE;

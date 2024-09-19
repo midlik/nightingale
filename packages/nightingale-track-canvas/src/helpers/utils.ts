@@ -53,6 +53,19 @@ export function range(n: number): number[] {
 }
 
 
+/** Return the last element of `array`, or `undefined` if there are no elements.
+ * If `predicate` is provided, return the last element where `predicate` returns true,
+ * or `undefined` if there is no such element. */
+export function last<T>(array: T[], predicate?: (value: T, index: number, obj: T[]) => boolean): T | undefined {
+    if (!predicate) return array.length > 0 ? array[array.length - 1] : undefined;
+    for (let i = array.length - 1; i >= 0; i--) {
+        const element = array[i];
+        if (predicate(element, i, array)) return element;
+    }
+    return undefined;
+}
+
+
 /** Return index of the first element of `sortedArray` which is greater than or equal to `query`.
  * Return length of `sortedArray` if all elements are less than `query`.
  * (aka Return the first index where `query` could be inserted while keeping the array sorted.) */
@@ -120,7 +133,7 @@ export class RangeCollection<T> {
             this.bins[binSpan].sort(this.compareFn);
         }
     }
-    
+
     /** Return number of items. */
     size(): number {
         return this.items.length;
@@ -140,7 +153,7 @@ export class RangeCollection<T> {
         const partialOuts = this.binSpans.map(binSpan => this.overlappingItemIndicesInBin(binSpan, start, stop, this._tmpArrays[binSpan] ??= []));
         return mergeSortedArrays(partialOuts, this.compareFn);
     }
-    
+
     private overlappingItemIndicesInBin(binSpan: number, start: number, stop: number, out: number[]): number[] {
         out.length = 0;
         const bin = this.bins[binSpan];
@@ -154,7 +167,7 @@ export class RangeCollection<T> {
         }
         return out;
     }
-    
+
     /** Console.log info about this RangeCollection */
     print(): void {
         for (const binSpan of this.binSpans) {

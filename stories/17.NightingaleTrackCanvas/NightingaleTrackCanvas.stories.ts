@@ -80,6 +80,7 @@ const ResidueShapes = [
 ];
 const perResidueData = range(defaultSequence.length).map(i => ({
   accession: `feature${i}`,
+  tooltipContent: `feature${i}`,
   start: i + 1,
   end: i + 1,
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
@@ -94,18 +95,122 @@ const perResidueData = range(defaultSequence.length).map(i => ({
 const spanLength = 10;
 const spanData = range(defaultSequence.length / spanLength).map(i => ({
   accession: `feature${i}`,
+  tooltipContent: `feature${i}`,
   start: i * spanLength + 1,
   end: (i + 1) * spanLength - 1,
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
   color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
-  shape: ResidueShapes[Math.floor(i / 2) % ResidueShapes.length],
+  shape: ResidueShapes[i % ResidueShapes.length],
+  // shape: ResidueShapes[Math.floor(i / 2) % ResidueShapes.length],
   opacity: 0.9,
 }));
 
-const data = spanData;
+const hierachicalData = [
+  {
+    accession: `feature_A`,
+    tooltipContent: `feature_A`,
+    color: 'black', fill: ResidueColors[0], shape: 'strand',
+    start: 1, end: 40,
+    locations: [
+      { fragments: [{ start: 1, end: 40 }] }
+    ],
+  },
+  {
+    accession: `feature_B`,
+    tooltipContent: `feature_B`,
+    color: 'black', fill: ResidueColors[1], shape: 'strand',
+    start: 54, end: 70,
+    locations: [
+      { fragments: [{ start: 54, end: 60 }] },
+      { fragments: [{ start: 64, end: 70 }] },
+    ],
+  },
+  {
+    accession: `feature_C`,
+    tooltipContent: `feature_C`,
+    color: 'black', fill: ResidueColors[2], shape: 'strand',
+    start: 80, end: 94,
+    locations: [
+      { fragments: [{ start: 80, end: 82 }, { start: 86, end: 88 }, { start: 92, end: 94 }] },
+    ],
+  },
+  {
+    accession: `feature_D`,
+    tooltipContent: `feature_D`,
+    color: 'black', fill: ResidueColors[3], shape: 'strand',
+    start: 110, end: 138,
+    locations: [
+      { fragments: [{ start: 110, end: 112 }, { start: 116, end: 118 }] },
+      { fragments: [{ start: 130, end: 132 }, { start: 136, end: 138 }] },
+    ],
+  },
+  {
+    accession: `feature_E`,
+    tooltipContent: `feature_E`,
+    color: 'black', fill: ResidueColors[4], shape: 'strand',
+    start: 150, end: 176,
+    locations: [
+      { fragments: [{ start: 150, end: 150 }, { start: 156, end: 156 }] },
+      { fragments: [{ start: 170 }, { start: 176 }] },
+    ],
+  },
+  {
+    accession: `feature_A2`,
+    tooltipContent: `feature_A2`,
+    color: 'black', fill: ResidueColors[0], shape: 'circle',
+    start: 201, end: 240,
+    locations: [
+      { fragments: [{ start: 201, end: 240 }] }
+    ],
+  },
+  {
+    accession: `feature_B2`,
+    tooltipContent: `feature_B2`,
+    color: 'black', fill: ResidueColors[1], shape: 'circle',
+    start: 254, end: 270,
+    locations: [
+      { fragments: [{ start: 254, end: 260 }] },
+      { fragments: [{ start: 264, end: 270 }] },
+    ],
+  },
+  {
+    accession: `feature_C2`,
+    tooltipContent: `feature_C2`,
+    color: 'black', fill: ResidueColors[2], shape: 'circle',
+    start: 280, end: 294,
+    locations: [
+      { fragments: [{ start: 280, end: 282 }, { start: 286, end: 288 }, { start: 292, end: 294 }] },
+    ],
+  },
+  {
+    accession: `feature_D2`,
+    tooltipContent: `feature_D2`,
+    color: 'black', fill: ResidueColors[3], shape: 'circle',
+    start: 310, end: 338,
+    locations: [
+      { fragments: [{ start: 310, end: 312 }, { start: 316, end: 318 }] },
+      { fragments: [{ start: 330, end: 332 }, { start: 336, end: 338 }] },
+    ],
+  },
+  {
+    accession: `feature_E2`,
+    tooltipContent: `feature_E2`,
+    color: 'black', fill: ResidueColors[4], shape: 'circle',
+    start: 350, end: 376,
+    locations: [
+      { fragments: [{ start: 350, end: 350 }, { start: 356, end: 356 }] },
+      { fragments: [{ start: 370 }, { start: 376 }] },
+    ],
+  },
+];
+
+const data = hierachicalData;
 // const data = [...spanData, ...perResidueData,];
 
+
+// const HIGHLIGHT_EVENT = "onclick";
+const HIGHLIGHT_EVENT = "onmouseover";
 
 console.time("Loading all")
 export const ManyTracks = () => {
@@ -135,7 +240,7 @@ export const ManyTracks = () => {
           length="${args.length}"
           display-start="${args["display-start"]}"
           display-end="${args["display-end"]}"
-          highlight-event="onmouseover"
+          highlight-event="${HIGHLIGHT_EVENT}"
           highlight-color="${args["highlight-color"]}"
           margin-color=${args["margin-color"]}
           use-ctrl-to-zoom
@@ -152,7 +257,7 @@ export const ManyTracks = () => {
           length="${args.length}"
           display-start="${args["display-start"]}"
           display-end="${args["display-end"]}"
-          highlight-event="onmouseover"
+          highlight-event="${HIGHLIGHT_EVENT}"
           highlight-color="${args["highlight-color"]}"
           margin-color=${args["margin-color"]}
           use-ctrl-to-zoom
@@ -199,7 +304,7 @@ export const ManyTracks = () => {
             length="${args.length}"
             display-start="${args["display-start"]}"
             display-end="${args["display-end"]}"
-            highlight-event="onmouseover"
+            highlight-event="${HIGHLIGHT_EVENT}"
             highlight-color=${args["highlight-color"]}
             margin-color=${args["margin-color"]}
             use-ctrl-to-zoom

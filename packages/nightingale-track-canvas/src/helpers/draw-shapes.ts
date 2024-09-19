@@ -47,6 +47,17 @@ export function drawRange(ctx: CanvasRenderingContext2D, shape: Shapes, x: numbe
   }
 }
 
+/** Return shape category this shape belongs to.
+ * "range" are shapes that stretch when zoomed in;
+ * "symbol" are shapes that do not stretch when zoomed in
+ * (but they are rendered with a stretching line, when applied to more than one residue);
+ * "unknown" are shapes that are not implemented (drawn as a question mark, thus they behave as "symbol"). */
+export function shapeCategory(shape: Shapes): "range" | "symbol" | "unknown" {
+  if (shape in SymbolDrawers) return "symbol";
+  if (shape in RangeDrawers) return "range";
+  return "unknown";
+}
+
 
 type SymbolDrawer = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
 
@@ -323,6 +334,11 @@ const RangeDrawers: Partial<Record<Shapes, RangeDrawer>> = {
     ctx.stroke();
   },
 };
+
+// Future-proofing for fixing typos (discontinUOS -> discontinUOUS)
+(RangeDrawers as Partial<Record<string, RangeDrawer>>).discontinuousStart = RangeDrawers.discontinuosStart;
+(RangeDrawers as Partial<Record<string, RangeDrawer>>).discontinuousEnd = RangeDrawers.discontinuosEnd;
+(RangeDrawers as Partial<Record<string, RangeDrawer>>).discontinuous = RangeDrawers.discontinuos;
 
 
 function drawLine(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number): void {
