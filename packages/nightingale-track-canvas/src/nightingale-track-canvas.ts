@@ -20,7 +20,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    select(window).on('resize.NightingaleTrackCanvas', () => {
+    select(window).on("resize.NightingaleTrackCanvas", () => {
       const devicePixelRatio = getDevicePixelRatio();
       if (devicePixelRatio !== this.canvasScale) {
         this.canvasScale = devicePixelRatio;
@@ -29,7 +29,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     });
   }
   override disconnectedCallback(): void {
-    select(window).on('resize.NightingaleTrackCanvas', null);
+    select(window).on("resize.NightingaleTrackCanvas", null);
     super.disconnectedCallback();
   }
 
@@ -43,7 +43,11 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   }
 
   protected override createTrack() {
-    console.log('createTrack')
+    console.log("createTrack")
+    if (this.svg) {
+      this.svg.selectAll("g").remove();
+      this.unbindEvents(this.svg);
+    }
     if (!this.data) return;
     this.layoutObj?.init(this.data);
     this.svg = select(this).selectAll<SVGSVGElement, unknown>("svg");
@@ -51,7 +55,10 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     this.canvasCtx = this.canvas.node()?.getContext("2d") ?? undefined;
     this.onDimensionsChange();
     this.createFeatures();
-    this.bindEvents(this.svg);
+    if (this.svg) { // this check is necessary because `svg` setter does not always set
+      this.bindEvents(this.svg);
+      this.highlighted = this.svg.append("g").attr("class", "highlighted");
+    }
   }
 
   protected override createFeatures() {
@@ -164,7 +171,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
           drawUnknown(ctx, cx, cy, r);
         }
         if (fragmentLength > 1) {
-          drawRange(ctx, 'line', x, y, width, height, optXPadding, fragmentLength);
+          drawRange(ctx, "line", x, y, width, height, optXPadding, fragmentLength);
         }
       }
     }
@@ -173,7 +180,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   private _unknownShapeWarningPrinted = new Set<Shapes>();
   private printUnknownShapeWarning(shape: Shapes): void {
     if (!this._unknownShapeWarningPrinted.has(shape)) {
-      console.warn(`NightingaleTrackCanvas: Drawing shape '${shape}' is not implemented. Will draw question marks instead ¯\\_(ツ)_/¯`);
+      console.warn(`NightingaleTrackCanvas: Drawing shape "${shape}" is not implemented. Will draw question marks instead ¯\\_(ツ)_/¯`);
       this._unknownShapeWarningPrinted.add(shape);
     }
   }
@@ -202,7 +209,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       const xStart = this.getXFromSeqPosition(fragment.start);
       const xEnd = xStart + fragmentLength * baseWidth;
       if (xStart <= svgX && svgX <= xEnd) return true; // pointing at range (for symbol and range shapes)
-      if (shapeCategory(this.getShape(feature)) !== 'range') {
+      if (shapeCategory(this.getShape(feature)) !== "range") {
         // Symbol shapes
         const xMid = xStart + 0.5 * fragmentLength * baseWidth;
         if (xMid - SYMBOL_RADIUS <= svgX && svgX <= xMid + SYMBOL_RADIUS) return true; // pointing at symbol (for symbol shapes only)
@@ -213,11 +220,15 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     return last(fragments, isPointed);
   }
 
-  private bindEvents<T extends BaseType>(target: Selection<T, unknown, BaseType, unknown> | undefined): void {
-    if (!target) return;
-    target.on('click.NightingaleTrackCanvas', (event: MouseEvent) => this.handleClick(event));
-    target.on('mousemove.NightingaleTrackCanvas', (event: MouseEvent) => this.handleMousemove(event));
-    target.on('mouseout.NightingaleTrackCanvas', () => this.handleMouseout());
+  private bindEvents<T extends BaseType>(target: Selection<T, unknown, BaseType, unknown>): void {
+    target.on("click.NightingaleTrackCanvas", (event: MouseEvent) => this.handleClick(event));
+    target.on("mousemove.NightingaleTrackCanvas", (event: MouseEvent) => this.handleMousemove(event));
+    target.on("mouseout.NightingaleTrackCanvas", () => this.handleMouseout());
+  }
+  private unbindEvents<T extends BaseType>(target: Selection<T, unknown, BaseType, unknown>): void {
+    target.on("click.NightingaleTrackCanvas", null);
+    target.on("mousemove.NightingaleTrackCanvas", null);
+    target.on("mouseout.NightingaleTrackCanvas", null);
   }
   private handleClick(event: MouseEvent): void {
     const fragment = this.getFragmentAt(event.offsetX, event.offsetY);
@@ -228,7 +239,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const withHighlight = this.getAttribute("highlight-event") === "onclick";
     const customEvent = createEvent(
       "click",
-      feature as unknown as Parameters<(typeof createEvent)>['1'],
+      feature as unknown as Parameters<(typeof createEvent)>["1"],
       withHighlight,
       true,
       fragment.start,
@@ -248,7 +259,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const withHighlight = this.getAttribute("highlight-event") === "onmouseover";
     const customEvent = createEvent(
       "mouseover",
-      feature as unknown as Parameters<(typeof createEvent)>['1'],
+      feature as unknown as Parameters<(typeof createEvent)>["1"],
       withHighlight,
       false,
       fragment.start,

@@ -76,7 +76,7 @@ class NightingaleTrack extends withManager(
     HTMLElement | SVGElement | null,
     unknown
   >;
-  #highlighted?: Selection<
+  protected highlighted?: Selection<
     SVGGElement,
     unknown,
     HTMLElement | SVGElement | null,
@@ -243,7 +243,7 @@ class NightingaleTrack extends withManager(
     if (!this.svg) return;
     this.seqG = this.svg.append("g").attr("class", "sequence-features");
     this.createFeatures();
-    this.#highlighted = this.svg.append("g").attr("class", "highlighted");
+    this.highlighted = this.svg.append("g").attr("class", "highlighted");
     this.margins = this.svg.append("g").attr("class", "margin");
   }
 
@@ -412,8 +412,8 @@ class NightingaleTrack extends withManager(
   }
 
   protected updateHighlight() {
-    if (!this.#highlighted) return;
-    const highlighs = this.#highlighted
+    if (!this.highlighted) return;
+    const highlighs = this.highlighted
       .selectAll<
         SVGRectElement,
         {
