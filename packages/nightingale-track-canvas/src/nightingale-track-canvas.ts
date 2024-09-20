@@ -1,5 +1,5 @@
 import { createEvent, customElementOnce } from "@nightingale-elements/nightingale-new-core";
-import NightingaleTrack, { FeatureLocation, Shapes } from "@nightingale-elements/nightingale-track";
+import NightingaleTrack, { Feature, FeatureLocation, Shapes } from "@nightingale-elements/nightingale-track";
 import { BaseType, select, Selection } from "d3";
 import { html } from "lit";
 import { drawRange, drawSymbol, drawUnknown, shapeCategory } from "./helpers/draw-shapes";
@@ -20,7 +20,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    select(window).on("resize.NightingaleTrackCanvas", () => {
+    select(window).on(`resize.NightingaleTrackCanvas-${this.id}`, () => {
       const devicePixelRatio = getDevicePixelRatio();
       if (devicePixelRatio !== this.canvasScale) {
         this.canvasScale = devicePixelRatio;
@@ -29,7 +29,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     });
   }
   override disconnectedCallback(): void {
-    select(window).on("resize.NightingaleTrackCanvas", null);
+    select(window).on(`resize.NightingaleTrackCanvas-${this.id}`, null);
     super.disconnectedCallback();
   }
 
@@ -105,11 +105,32 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     return new RangeCollection(fragments, { start: f => f.start, stop: f => (f.end ?? f.start) + 1 });
   }
 
+  private _drawStamp: { data?: Feature[], canvas?: CanvasRenderingContext2D, extent?: string } = {};
+  /** If `_drawStamp` has become outdated since the last call to this function, update `_drawStamp` and return true.
+   * Otherwise return false. */
+  private needsRedraw(): boolean {
+    const stamp = {
+      data: this.data,
+      canvas: this.canvasCtx,
+      extent: `${this.width}x${this.height}@${this.canvasScale}/${this.getSeqPositionFromX(0)}:${this.getSeqPositionFromX(this.width)}`,
+    };
+    if (stamp.data === this._drawStamp.data && stamp.canvas === this._drawStamp.canvas && stamp.extent === this._drawStamp.extent) {
+      return false;
+    } else {
+      this._drawStamp = stamp;
+      return true;
+    }
+  }
+
+  /** Request canvas redraw. */
   private requestDraw = () => this._drawer.requestRefresh();
-  private readonly _drawer = Refresher(() => {
+  private readonly _drawer = Refresher(() => this._draw());
+  /** Do not call directly! Call `requestDraw` instead to avoid browser freezing. */
+  private _draw(): void {
+    if (!this.needsRedraw()) return;
     this.adjustCanvasLogicalSize();
     this.canvasDrawFeatures();
-  });
+  }
 
   private adjustCanvasLogicalSize() {
     if (!this.canvasCtx) return;
