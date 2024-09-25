@@ -7,8 +7,8 @@ import "../../packages/nightingale-track-canvas/src/index";
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
-const N_TRACKS = 1;
-const SHOW_NIGHTINGALE_TRACK = true;
+const N_TRACKS = 2000;
+const SHOW_NIGHTINGALE_TRACK = false;
 const SHOW_NIGHTINGALE_TRACK_CANVAS = true;
 
 const N_SEQ_REPEAT = 1;
@@ -68,7 +68,7 @@ const defaultData = [
 
 
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
-// const ResidueColors = ["#eeeeff", "#ddddff", "#ccccff", "#bbbbff", "#aaaaff", "#8888ff", "#6666ff", "#4444ff", "#2222ff", "#0000ff",];
+const ResidueColorsShades = ["#eeeeff", "#ddddff", "#ccccff", "#bbbbff", "#aaaaff", "#8888ff", "#6666ff", "#4444ff", "#2222ff", "#0000ff",];
 // const ResidueColors = ['#111111', '#ffeedd'];
 // const ResidueColors = ['green'];
 const ResidueShapes = [
@@ -205,6 +205,44 @@ const hierachicalData = [
   },
 ];
 
+function colors(color: string) { return { color: rgb(color).darker(), fill: color } }
+const demoData = [
+  ...range(70).map(i => ({
+    accession: `feature${i}`,
+    start: i + 5,
+    end: i + 5,
+    color: rgb(ResidueColorsShades[Math.floor(i / 5) % ResidueColorsShades.length]).darker(),
+    fill: ResidueColorsShades[Math.floor(i / 5) % ResidueColorsShades.length],
+  })),
+  { start: 90, end: 130, ...colors('#4169e1'), shape: 'rectangle' },
+  { start: 131, end: 131, ...colors('#ff7900'), shape: 'rectangle' },
+  { start: 132, end: 132, ...colors('#ff7900'), shape: 'rectangle' },
+  { start: 133, end: 139, ...colors('#d3d3d3'), shape: 'rectangle' },
+  { start: 140, end: 155, ...colors('#4169e1'), shape: 'rectangle' },
+
+  { start: 170, end: 190, ...colors('#1b9e77'), shape: 'roundRectangle' },
+  { start: 195, end: 204, ...colors('#d95f02'), shape: 'discontinuosEnd' },
+  { start: 206, end: 214, ...colors('#7570b3'), shape: 'discontinuos' },
+  { start: 216, end: 225, ...colors('#e7298a'), shape: 'discontinuosStart' },
+
+  { start: 235, end: 244, ...colors('#9e9e9e'), shape: 'line' },
+  { start: 245, end: 265, ...colors('#ff64a4'), shape: 'helix' },
+  { start: 266, end: 269, ...colors('#9e9e9e'), shape: 'line' },
+  { start: 270, end: 290, ...colors('#ffcc02'), shape: 'strand' },
+  { start: 291, end: 295, ...colors('#9e9e9e'), shape: 'line' },
+
+  { start: 310, end: 310, ...colors('#1b9e77'), shape: 'circle' },
+  { start: 320, end: 320, ...colors('#d95f02'), shape: 'triangle' },
+  { start: 330, end: 330, ...colors('#7570b3'), shape: 'diamond' },
+  { start: 340, end: 340, ...colors('#e7298a'), shape: 'pentagon' },
+  { start: 350, end: 350, ...colors('#66a61e'), shape: 'hexagon' },
+  { start: 360, end: 360, ...colors('#e6ab02'), shape: 'chevron' },
+  { start: 370, end: 370, ...colors('#a6761d'), shape: 'catFace' },
+  { start: 380, end: 380, ...colors('#1b9e77'), shape: 'arrow' },
+  { start: 390, end: 390, ...colors('#d95f02'), shape: 'wave' },
+  { start: 400, end: 400, ...colors('#7570b3'), shape: 'doubleBar' },
+];
+
 const data = hierachicalData;
 // const data = [...spanData, ...perResidueData,];
 
@@ -212,7 +250,10 @@ const data = hierachicalData;
 // const HIGHLIGHT_EVENT = "onclick";
 const HIGHLIGHT_EVENT = "onmouseover";
 
-console.time("Loading all")
+console.log("time Loading all: start")
+console.time("time Loading all and rendering first")
+console.time("time Loading all and rendering")
+console.time("time Loading all")
 export const ManyTracks = () => {
   const args = {
     "min-width": 500,
@@ -234,7 +275,7 @@ export const ManyTracks = () => {
     const nightingaleTrack = html`
       <div style="line-height: 0; margin-top: 2px;">
         <nightingale-track
-          id="track-${i}"
+          id="track-${i === N_TRACKS - 1 ? 'z' : i}"
           min-width="${args["min-width"]}"
           height=${args.trackHeight}
           length="${args.length}"
@@ -251,7 +292,7 @@ export const ManyTracks = () => {
     const nightingaleTrackCanvas = html`
       <div style="line-height: 0; margin-top: 2px;">
         <nightingale-track-canvas
-          id="canvas-track-${i}"
+          id="canvas-track-${i === N_TRACKS - 1 ? 'z' : i}"
           min-width="${args["min-width"]}"
           height=${args.trackHeight}
           length="${args.length}"
@@ -279,7 +320,7 @@ export const ManyTracks = () => {
   ></nightingale-saver>
   Use Ctrl+scroll to zoom.
   <div id="root">
-    <nightingale-manager>
+    <nightingale-manager style="background-color: #caffee;">
       <div style="display:flex; flex-direction: column; width: 100%;">
         <div style="line-height: 0">
           <nightingale-navigation
@@ -319,14 +360,14 @@ export const ManyTracks = () => {
 }
 
 ManyTracks.play = async () => {
-  console.timeEnd("Loading all")
+  console.timeEnd("time Loading all")
   console.time("play")
   await customElements.whenDefined("nightingale-track-canvas");
   console.log(`Initializing ${N_TRACKS} tracks (${N_TRACKS * data.length} items)`)
   console.time("Initializing")
   for (let i = 0; i < N_TRACKS; i++) {
-    setTrackData(`track-${i}`, data);
-    setTrackData(`canvas-track-${i}`, data);
+    setTrackData(`track-${i === N_TRACKS - 1 ? 'z' : i}`, data);
+    setTrackData(`canvas-track-${i === N_TRACKS - 1 ? 'z' : i}`, data);
   }
   console.timeEnd("Initializing")
   console.timeEnd("play")

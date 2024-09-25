@@ -20,6 +20,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    // Correctly adjust canvasScale on resize:
     select(window).on(`resize.NightingaleTrackCanvas-${this.id}`, () => {
       const devicePixelRatio = getDevicePixelRatio();
       if (devicePixelRatio !== this.canvasScale) {
@@ -43,7 +44,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   }
 
   protected override createTrack() {
-    console.log("createTrack")
+    // console.log("createTrack")
     if (this.svg) {
       this.svg.selectAll("g").remove();
       this.unbindEvents(this.svg);
@@ -197,6 +198,8 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       }
     }
     // console.timeEnd("canvasDrawFeatures")
+  if (this.id === 'canvas-track-0') console.timeEnd("time Loading all and rendering first")
+  if (this.id === 'canvas-track-z') console.timeEnd("time Loading all and rendering")
   }
   private _unknownShapeWarningPrinted = new Set<Shapes>();
   private printUnknownShapeWarning(shape: Shapes): void {
