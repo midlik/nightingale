@@ -7,8 +7,8 @@ import "../../packages/nightingale-track-canvas/src/index";
 
 export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
-const N_TRACKS = 2000;
-const SHOW_NIGHTINGALE_TRACK = false;
+const N_TRACKS = 1;
+const SHOW_NIGHTINGALE_TRACK = true;
 const SHOW_NIGHTINGALE_TRACK_CANVAS = true;
 
 const N_SEQ_REPEAT = 1;
@@ -263,7 +263,8 @@ export const ManyTracks = () => {
     "display-start": 1,
     "display-end": defaultSequence.length,
     "highlight-color": "#EB3BFF22",
-    "margin-color": "transparent",
+    // "margin-color": "transparent",
+    "margin-color": "#ffffffdd",
     layout: "non-overlapping",
     // layout: "default",
     navigationHeight: 50,

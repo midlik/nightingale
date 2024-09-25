@@ -197,10 +197,31 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
         }
       }
     }
+
+    this.drawMargins();
     // console.timeEnd("canvasDrawFeatures")
-  if (this.id === 'canvas-track-0') console.timeEnd("time Loading all and rendering first")
-  if (this.id === 'canvas-track-z') console.timeEnd("time Loading all and rendering")
+    // if (this.id === 'canvas-track-0') console.timeEnd("time Loading all and rendering first")
+    // if (this.id === 'canvas-track-z') console.timeEnd("time Loading all and rendering")
   }
+
+  private drawMargins() {
+    const ctx = this.canvasCtx;
+    if (!ctx) return;
+    const canvasWidth = ctx.canvas.width;
+    const canvasHeight = ctx.canvas.height;
+    const scale = this.canvasScale;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = this["margin-color"];
+    const marginLeft = this["margin-left"] * scale;
+    const marginRight = this["margin-right"] * scale;
+    const marginTop = this["margin-top"] * scale;
+    const marginBottom = this["margin-bottom"] * scale;
+    ctx.fillRect(0, 0, marginLeft, canvasHeight);
+    ctx.fillRect(canvasWidth - marginRight, 0, marginRight, canvasHeight);
+    ctx.fillRect(marginLeft, 0, canvasWidth - marginLeft - marginRight, marginTop);
+    ctx.fillRect(marginLeft, canvasHeight - marginBottom, canvasWidth - marginLeft - marginRight, marginBottom);
+  }
+
   private _unknownShapeWarningPrinted = new Set<Shapes>();
   private printUnknownShapeWarning(shape: Shapes): void {
     if (!this._unknownShapeWarningPrinted.has(shape)) {
