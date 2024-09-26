@@ -320,6 +320,23 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const customEvent = createEvent("mouseout", null, withHighlight);
     this.dispatchEvent(customEvent);
   }
+
+  /** Render canvas content in specified `scale` (or in current display scale if not provided) and return as `ImageData`. 
+   * Return `undefined` if canvas has not been initialized. */
+  getImageData(options?: { scale?: number }): ImageData | undefined {
+    if (!this.canvasCtx) return undefined;
+    const scale = options?.scale ?? this.canvasScale;
+    const oldScale = this.canvasScale;
+    try {
+      this.canvasScale = scale;
+      this._draw();
+      const imageData = this.canvasCtx.getImageData(0, 0, this.canvasCtx.canvas.width, this.canvasCtx.canvas.height);
+      return imageData;
+    } finally {
+      this.canvasScale = oldScale;
+      this._draw();
+    }
+  }
 }
 
 

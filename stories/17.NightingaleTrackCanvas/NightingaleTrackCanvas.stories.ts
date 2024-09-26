@@ -315,13 +315,13 @@ export const ManyTracks = () => {
 
   return html`
   <nightingale-saver
-  element-id="root"
-  background-color="white"
-  scale-factor="2"
+    element-id="nightingale-root"
+    background-color="white"
+    scale-factor="2"
   ></nightingale-saver>
   Use Ctrl+scroll to zoom.
-  <div id="root">
-    <nightingale-manager style="background-color: #caffee;">
+  <div id="nightingale-root">
+    <nightingale-manager>
       <div style="display:flex; flex-direction: column; width: 100%;">
         <div style="line-height: 0">
           <nightingale-navigation
