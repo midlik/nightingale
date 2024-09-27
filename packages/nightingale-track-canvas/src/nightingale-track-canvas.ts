@@ -50,21 +50,19 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       this.unbindEvents(this.svg);
     }
     if (!this.data) return;
+    // console.time(`layoutObj.init(${this.data.length})`)
     this.layoutObj?.init(this.data);
+    // console.timeEnd(`layoutObj.init(${this.data.length})`)
     this.svg = select(this).selectAll<SVGSVGElement, unknown>("svg");
     this.canvas = select(this).selectAll<HTMLCanvasElement, unknown>("canvas");
     this.canvasCtx = this.canvas.node()?.getContext("2d") ?? undefined;
     this.onDimensionsChange();
-    this.createFeatures();
+    // this.allFragments = this.getAllFragments();
+    this.fragmentCollection = this.getFragmentCollection();
     if (this.svg) { // this check is necessary because `svg` setter does not always set
       this.bindEvents(this.svg);
       this.highlighted = this.svg.append("g").attr("class", "highlighted");
     }
-  }
-
-  protected override createFeatures() {
-    // this.allFragments = this.getAllFragments();
-    this.fragmentCollection = this.getFragmentCollection();
   }
 
   override refresh() {
@@ -97,7 +95,6 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
         }
       }
     }
-    // allFragments.sort((a, b) => a.start - b.start);
     return allFragments;
   }
   private fragmentCollection?: RangeCollection<ExtendedFragment>;
@@ -157,8 +154,8 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const scale = this.canvasScale;
     ctx.lineWidth = scale * 1;
     const baseWidth = scale * this.getSingleBaseWidth();
-    const height = scale * (this.layoutObj?.getFeatureHeight() ?? 0);
-    const optXPadding = Math.min(scale * 1.5, 0.25 * baseWidth); // to avoid overlap/touch for certain shapes (line, bridge, helix, strand)
+    const height = scale * Math.abs(this.layoutObj?.getFeatureHeight() ?? 0); // Yes, sometimes `getFeatureHeight` returns negative numbers ¯\_(ツ)_/¯
+    const optXPadding = Math.min(scale * 1.5, 0.25 * baseWidth); // To avoid overlap/touch for certain shapes (line, bridge, helix, strand)
     const featureYs: Record<number, number> = {};
     const featureStrokeColors: Record<number, string> = {};
     const featureFillColors: Record<number, string> = {};
@@ -171,7 +168,9 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
     // TODO consider lineWidth and symbol width here
 
-    for (const fragment of this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq)) {
+    const fragments = this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq);
+    // const fragments = (this.allFragments ?? []).filter(f => f.start <= rightEdgeSeq && (f.end ?? f.start) + 1 >= leftEdgeSeq);
+    for (const fragment of fragments) {
       const iFeature = fragment.featureIndex;
       const fragmentLength = (fragment.end ?? fragment.start) + 1 - fragment.start;
       const x = scale * this.getXFromSeqPosition(fragment.start);

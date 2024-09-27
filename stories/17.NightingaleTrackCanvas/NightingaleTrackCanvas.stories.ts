@@ -16,7 +16,7 @@ const N_SEQ_REPEAT = 1;
 const seq = "iubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASViubcbcIUENACBPAOUBCASFUBRUABBRWOAUVBISVBAISBVDOASVCASFU";
 const defaultSequence = repStr(seq, N_SEQ_REPEAT);
 function repStr(str: string, n: number) {
-  return new Array(n).fill(0).map(() => str).join('');
+  return new Array(n).fill(0).map(() => str).join("");
 }
 
 const defaultData = [
@@ -69,8 +69,8 @@ const defaultData = [
 
 const ResidueColors = ["#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d"];
 const ResidueColorsShades = ["#eeeeff", "#ddddff", "#ccccff", "#bbbbff", "#aaaaff", "#8888ff", "#6666ff", "#4444ff", "#2222ff", "#0000ff",];
-// const ResidueColors = ['#111111', '#ffeedd'];
-// const ResidueColors = ['green'];
+// const ResidueColors = ["#111111", "#ffeedd"];
+// const ResidueColors = ["green"];
 const ResidueShapes = [
   "rectangle", "roundRectangle", "line", "rectangle", "bridge",
   "discontinuosEnd", "discontinuos", "discontinuosStart",
@@ -86,8 +86,8 @@ const perResidueData = range(defaultSequence.length).map(i => ({
   // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
   color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
-  // color: '#000000',
-  // fill: '#00ffee',
+  // color: "#000000",
+  // fill: "#00ffee",
   shape: ResidueShapes[i % ResidueShapes.length],
   opacity: 0.9,
 }));
@@ -98,7 +98,7 @@ const spanData = range(defaultSequence.length / spanLength).map(i => ({
   tooltipContent: `feature${i}`,
   start: i * spanLength + 1,
   end: (i + 1) * spanLength - 1,
-  // locations: [{ fragments: [{ start: i + 1, end: i + 1 }] }],
+  // locations: [{ fragments: [{ start: i * spanLength + 1, end: (i + 1) * spanLength - 1 }] }],
   color: rgb(ResidueColors[i % ResidueColors.length]).darker(),
   fill: ResidueColors[i % ResidueColors.length],
   shape: ResidueShapes[i % ResidueShapes.length],
@@ -108,18 +108,18 @@ const spanData = range(defaultSequence.length / spanLength).map(i => ({
 
 const hierachicalData = [
   {
-    accession: `feature_A`,
-    tooltipContent: `feature_A`,
-    color: 'black', fill: ResidueColors[0], shape: 'strand',
+    accession: "feature_A",
+    tooltipContent: "feature_A",
+    color: "black", fill: ResidueColors[0], shape: "strand",
     start: 1, end: 40,
     locations: [
       { fragments: [{ start: 1, end: 40 }] }
     ],
   },
   {
-    accession: `feature_B`,
-    tooltipContent: `feature_B`,
-    color: 'black', fill: ResidueColors[1], shape: 'strand',
+    accession: "feature_B",
+    tooltipContent: "feature_B",
+    color: "black", fill: ResidueColors[1], shape: "strand",
     start: 54, end: 70,
     locations: [
       { fragments: [{ start: 54, end: 60 }] },
@@ -127,18 +127,18 @@ const hierachicalData = [
     ],
   },
   {
-    accession: `feature_C`,
-    tooltipContent: `feature_C`,
-    color: 'black', fill: ResidueColors[2], shape: 'strand',
+    accession: "feature_C",
+    tooltipContent: "feature_C",
+    color: "black", fill: ResidueColors[2], shape: "strand",
     start: 80, end: 94,
     locations: [
       { fragments: [{ start: 80, end: 82 }, { start: 86, end: 88 }, { start: 92, end: 94 }] },
     ],
   },
   {
-    accession: `feature_D`,
-    tooltipContent: `feature_D`,
-    color: 'black', fill: ResidueColors[3], shape: 'strand',
+    accession: "feature_D",
+    tooltipContent: "feature_D",
+    color: "black", fill: ResidueColors[3], shape: "strand",
     start: 110, end: 138,
     locations: [
       { fragments: [{ start: 110, end: 112 }, { start: 116, end: 118 }] },
@@ -146,9 +146,9 @@ const hierachicalData = [
     ],
   },
   {
-    accession: `feature_E`,
-    tooltipContent: `feature_E`,
-    color: 'black', fill: ResidueColors[4], shape: 'strand',
+    accession: "feature_E",
+    tooltipContent: "feature_E",
+    color: "black", fill: ResidueColors[4], shape: "strand",
     start: 150, end: 176,
     locations: [
       { fragments: [{ start: 150, end: 150 }, { start: 156, end: 156 }] },
@@ -156,18 +156,18 @@ const hierachicalData = [
     ],
   },
   {
-    accession: `feature_A2`,
-    tooltipContent: `feature_A2`,
-    color: 'black', fill: ResidueColors[0], shape: 'circle',
+    accession: "feature_A2",
+    tooltipContent: "feature_A2",
+    color: "black", fill: ResidueColors[0], shape: "circle",
     start: 201, end: 240,
     locations: [
       { fragments: [{ start: 201, end: 240 }] }
     ],
   },
   {
-    accession: `feature_B2`,
-    tooltipContent: `feature_B2`,
-    color: 'black', fill: ResidueColors[1], shape: 'circle',
+    accession: "feature_B2",
+    tooltipContent: "feature_B2",
+    color: "black", fill: ResidueColors[1], shape: "circle",
     start: 254, end: 270,
     locations: [
       { fragments: [{ start: 254, end: 260 }] },
@@ -175,18 +175,18 @@ const hierachicalData = [
     ],
   },
   {
-    accession: `feature_C2`,
-    tooltipContent: `feature_C2`,
-    color: 'black', fill: ResidueColors[2], shape: 'circle',
+    accession: "feature_C2",
+    tooltipContent: "feature_C2",
+    color: "black", fill: ResidueColors[2], shape: "circle",
     start: 280, end: 294,
     locations: [
       { fragments: [{ start: 280, end: 282 }, { start: 286, end: 288 }, { start: 292, end: 294 }] },
     ],
   },
   {
-    accession: `feature_D2`,
-    tooltipContent: `feature_D2`,
-    color: 'black', fill: ResidueColors[3], shape: 'circle',
+    accession: "feature_D2",
+    tooltipContent: "feature_D2",
+    color: "black", fill: ResidueColors[3], shape: "circle",
     start: 310, end: 338,
     locations: [
       { fragments: [{ start: 310, end: 312 }, { start: 316, end: 318 }] },
@@ -194,9 +194,9 @@ const hierachicalData = [
     ],
   },
   {
-    accession: `feature_E2`,
-    tooltipContent: `feature_E2`,
-    color: 'black', fill: ResidueColors[4], shape: 'circle',
+    accession: "feature_E2",
+    tooltipContent: "feature_E2",
+    color: "black", fill: ResidueColors[4], shape: "circle",
     start: 350, end: 376,
     locations: [
       { fragments: [{ start: 350, end: 350 }, { start: 356, end: 356 }] },
@@ -214,33 +214,33 @@ const demoData = [
     color: rgb(ResidueColorsShades[Math.floor(i / 5) % ResidueColorsShades.length]).darker(),
     fill: ResidueColorsShades[Math.floor(i / 5) % ResidueColorsShades.length],
   })),
-  { start: 90, end: 130, ...colors('#4169e1'), shape: 'rectangle' },
-  { start: 131, end: 131, ...colors('#ff7900'), shape: 'rectangle' },
-  { start: 132, end: 132, ...colors('#ff7900'), shape: 'rectangle' },
-  { start: 133, end: 139, ...colors('#d3d3d3'), shape: 'rectangle' },
-  { start: 140, end: 155, ...colors('#4169e1'), shape: 'rectangle' },
+  { start: 90, end: 130, ...colors("#4169e1"), shape: "rectangle" },
+  { start: 131, end: 131, ...colors("#ff7900"), shape: "rectangle" },
+  { start: 132, end: 132, ...colors("#ff7900"), shape: "rectangle" },
+  { start: 133, end: 139, ...colors("#d3d3d3"), shape: "rectangle" },
+  { start: 140, end: 155, ...colors("#4169e1"), shape: "rectangle" },
 
-  { start: 170, end: 190, ...colors('#1b9e77'), shape: 'roundRectangle' },
-  { start: 195, end: 204, ...colors('#d95f02'), shape: 'discontinuosEnd' },
-  { start: 206, end: 214, ...colors('#7570b3'), shape: 'discontinuos' },
-  { start: 216, end: 225, ...colors('#e7298a'), shape: 'discontinuosStart' },
+  { start: 170, end: 190, ...colors("#1b9e77"), shape: "roundRectangle" },
+  { start: 195, end: 204, ...colors("#d95f02"), shape: "discontinuosEnd" },
+  { start: 206, end: 214, ...colors("#7570b3"), shape: "discontinuos" },
+  { start: 216, end: 225, ...colors("#e7298a"), shape: "discontinuosStart" },
 
-  { start: 235, end: 244, ...colors('#9e9e9e'), shape: 'line' },
-  { start: 245, end: 265, ...colors('#ff64a4'), shape: 'helix' },
-  { start: 266, end: 269, ...colors('#9e9e9e'), shape: 'line' },
-  { start: 270, end: 290, ...colors('#ffcc02'), shape: 'strand' },
-  { start: 291, end: 295, ...colors('#9e9e9e'), shape: 'line' },
+  { start: 235, end: 244, ...colors("#9e9e9e"), shape: "line" },
+  { start: 245, end: 265, ...colors("#ff64a4"), shape: "helix" },
+  { start: 266, end: 269, ...colors("#9e9e9e"), shape: "line" },
+  { start: 270, end: 290, ...colors("#ffcc02"), shape: "strand" },
+  { start: 291, end: 295, ...colors("#9e9e9e"), shape: "line" },
 
-  { start: 310, end: 310, ...colors('#1b9e77'), shape: 'circle' },
-  { start: 320, end: 320, ...colors('#d95f02'), shape: 'triangle' },
-  { start: 330, end: 330, ...colors('#7570b3'), shape: 'diamond' },
-  { start: 340, end: 340, ...colors('#e7298a'), shape: 'pentagon' },
-  { start: 350, end: 350, ...colors('#66a61e'), shape: 'hexagon' },
-  { start: 360, end: 360, ...colors('#e6ab02'), shape: 'chevron' },
-  { start: 370, end: 370, ...colors('#a6761d'), shape: 'catFace' },
-  { start: 380, end: 380, ...colors('#1b9e77'), shape: 'arrow' },
-  { start: 390, end: 390, ...colors('#d95f02'), shape: 'wave' },
-  { start: 400, end: 400, ...colors('#7570b3'), shape: 'doubleBar' },
+  { start: 310, end: 310, ...colors("#1b9e77"), shape: "circle" },
+  { start: 320, end: 320, ...colors("#d95f02"), shape: "triangle" },
+  { start: 330, end: 330, ...colors("#7570b3"), shape: "diamond" },
+  { start: 340, end: 340, ...colors("#e7298a"), shape: "pentagon" },
+  { start: 350, end: 350, ...colors("#66a61e"), shape: "hexagon" },
+  { start: 360, end: 360, ...colors("#e6ab02"), shape: "chevron" },
+  { start: 370, end: 370, ...colors("#a6761d"), shape: "catFace" },
+  { start: 380, end: 380, ...colors("#1b9e77"), shape: "arrow" },
+  { start: 390, end: 390, ...colors("#d95f02"), shape: "wave" },
+  { start: 400, end: 400, ...colors("#7570b3"), shape: "doubleBar" },
 ];
 
 const data = hierachicalData;
@@ -276,7 +276,7 @@ export const ManyTracks = () => {
     const nightingaleTrack = html`
       <div style="line-height: 0; margin-top: 2px;">
         <nightingale-track
-          id="track-${i === N_TRACKS - 1 ? 'z' : i}"
+          id="track-${i === N_TRACKS - 1 ? "z" : i}"
           min-width="${args["min-width"]}"
           height=${args.trackHeight}
           length="${args.length}"
@@ -293,7 +293,7 @@ export const ManyTracks = () => {
     const nightingaleTrackCanvas = html`
       <div style="line-height: 0; margin-top: 2px;">
         <nightingale-track-canvas
-          id="canvas-track-${i === N_TRACKS - 1 ? 'z' : i}"
+          id="canvas-track-${i === N_TRACKS - 1 ? "z" : i}"
           min-width="${args["min-width"]}"
           height=${args.trackHeight}
           length="${args.length}"
@@ -308,8 +308,8 @@ export const ManyTracks = () => {
         </nightingale-track-canvas>
       </div>`;
     return html`
-      ${SHOW_NIGHTINGALE_TRACK ? nightingaleTrack : ''}
-      ${SHOW_NIGHTINGALE_TRACK_CANVAS ? nightingaleTrackCanvas : ''}
+      ${SHOW_NIGHTINGALE_TRACK ? nightingaleTrack : ""}
+      ${SHOW_NIGHTINGALE_TRACK_CANVAS ? nightingaleTrackCanvas : ""}
       `;
   });
 
@@ -367,8 +367,8 @@ ManyTracks.play = async () => {
   console.log(`Initializing ${N_TRACKS} tracks (${N_TRACKS * data.length} items)`)
   console.time("Initializing")
   for (let i = 0; i < N_TRACKS; i++) {
-    setTrackData(`track-${i === N_TRACKS - 1 ? 'z' : i}`, data);
-    setTrackData(`canvas-track-${i === N_TRACKS - 1 ? 'z' : i}`, data);
+    setTrackData(`track-${i === N_TRACKS - 1 ? "z" : i}`, data);
+    setTrackData(`canvas-track-${i === N_TRACKS - 1 ? "z" : i}`, data);
   }
   console.timeEnd("Initializing")
   console.timeEnd("play")
