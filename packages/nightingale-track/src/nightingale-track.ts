@@ -119,22 +119,18 @@ class NightingaleTrack extends withManager(
   }
 
   static normalizeLocations(data: Feature[]) {
-    return data.map((obj) => {
-      const { locations, start, end } = obj;
-      return locations
-        ? obj
-        : Object.assign(obj, {
-            locations: [
-              {
-                fragments: [
-                  {
-                    start,
-                    end,
-                  },
-                ],
-              },
-            ],
-          });
+    return data.map(feature => {
+      if (feature.locations) {
+        // Add missing `start`/`end` based on `locations`
+        feature.start ??= getStartFromLocations(feature.locations);
+        feature.end ??= getEndFromLocations(feature.locations);
+      } else {
+        // Add missing `locations` based on `start`/`end`
+        feature.start ??= 1;
+        feature.end ??= feature.start;
+        feature.locations = [{ fragments: [{ start: feature.start, end: feature.end }] }];
+      }
+      return feature;
     });
   }
 
@@ -455,3 +451,29 @@ export default NightingaleTrack;
 
 export { DefaultLayout };
 export { getColorByType };
+
+
+/** Return leftmost start of fragment */
+function getStartFromLocations(locations: FeatureLocation[]): number | undefined {
+  let start: number | undefined = undefined;
+  for (const location of locations) {
+    for (const fragment of location.fragments) {
+      if (start === undefined || fragment.start < start) {
+        start = fragment.start;
+      }
+    }
+  }
+  return start;
+}
+/** Return rightmost end of fragment */
+function getEndFromLocations(locations: FeatureLocation[]): number | undefined {
+  let end: number | undefined = undefined;
+  for (const location of locations) {
+    for (const fragment of location.fragments) {
+      if (end === undefined || fragment.end > end) {
+        end = fragment.end;
+      }
+    }
+  }
+  return end;
+}
