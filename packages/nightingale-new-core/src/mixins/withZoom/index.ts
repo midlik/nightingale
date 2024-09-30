@@ -17,18 +17,16 @@ import withPosition, { withPositionInterface } from "../withPosition";
 import withMargin, { withMarginInterface } from "../withMargin";
 import withResizable, { WithResizableInterface } from "../withResizable";
 
+
+type SVGSelection = Selection<SVGSVGElement, unknown, HTMLElement | SVGElement | null, unknown>;
+
 export interface WithZoomInterface
   extends WithDimensionsInterface,
   withPositionInterface,
   withMarginInterface,
   WithResizableInterface {
   xScale?: ScaleLinear<number, number>;
-  svg?: Selection<
-    SVGSVGElement,
-    unknown,
-    HTMLElement | SVGElement | null,
-    unknown
-  >;
+  svg?: SVGSelection;
   updateScaleDomain(): void;
   getSingleBaseWidth(): number;
   getXFromSeqPosition(position: number): number;
@@ -41,7 +39,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
 ) => {
   class WithZoom extends withMargin(
     withPosition(withResizable(withDimensions(superClass))),
-  ) {
+  ) implements WithZoomInterface {
     _applyZoomTranslation: () => void;
     /**
      * Base scale without any transformations, only updated in `updateScaleDomain`
@@ -55,8 +53,8 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
      * Current scale, the one used to calculate any positions. Calculated based on `display-start` and `display-end`.
      */
     xScale?: ScaleLinear<number, number>;
-    _zoom?: ZoomBehavior<HTMLElement, unknown>;
-    _svg?: Selection<HTMLElement, unknown, HTMLElement, unknown>;
+    _zoom?: ZoomBehavior<SVGSVGElement, unknown>;
+    _svg?: SVGSelection;
     dontDispatch?: boolean;
 
     @property({ type: Boolean })
@@ -105,14 +103,14 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
       return this._zoom;
     }
 
-    set svg(svg) {
+    set svg(svg: SVGSelection) {
       if (!svg || !this._zoom) return;
       this._svg = svg;
       svg.call(this._zoom).on("dblclick.zoom", null);
       this.applyZoomTranslation();
     }
 
-    get svg() {
+    get svg(): SVGSelection | undefined {
       return this._svg;
     }
 
@@ -130,7 +128,7 @@ const withZoom = <T extends Constructor<NightingaleBaseElement>>(
     }
 
     _initZoom() {
-      this._zoom = d3zoom<HTMLElement, unknown>()
+      this._zoom = d3zoom<SVGSVGElement, unknown>()
         .scaleExtent([1, Infinity])
         .translateExtent([
           [0, 0],
