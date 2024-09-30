@@ -2,8 +2,8 @@ import { createEvent, customElementOnce } from "@nightingale-elements/nightingal
 import NightingaleTrack, { Feature, FeatureLocation, Shapes } from "@nightingale-elements/nightingale-track";
 import { BaseType, select, Selection } from "d3";
 import { html } from "lit";
-import { drawRange, drawSymbol, drawUnknown, shapeCategory } from "./helpers/draw-shapes";
-import { last, RangeCollection, Refresher } from "./helpers/utils";
+import { drawRange, drawSymbol, drawUnknown, shapeCategory } from "./utils/draw-shapes";
+import { last, RangeCollection, Refresher } from "./utils/utils";
 
 
 type Fragment = FeatureLocation["fragments"][number]

@@ -1,7 +1,7 @@
 import { Meta } from "@storybook/web-components";
 import { rgb } from "d3";
 import { html } from "lit-html";
-import { range } from "../../packages/nightingale-track-canvas/src/helpers/utils";
+import { range } from "../../packages/nightingale-track-canvas/src/utils/utils";
 import "../../packages/nightingale-track-canvas/src/index";
 
 
