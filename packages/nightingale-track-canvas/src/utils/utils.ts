@@ -66,16 +66,16 @@ export function last<T>(array: T[], predicate?: (value: T, index: number, obj: T
 }
 
 
-/** Return index of the first element of `sortedArray` which is greater than or equal to `query`.
- * Return length of `sortedArray` if all elements are less than `query`.
+/** Return index of the first element of `sortedArray` for which `key(element) >= query`.
+ * Return length of `sortedArray` if `key(element) < query` for all elements.
  * (aka Return the first index where `query` could be inserted while keeping the array sorted.) */
-export function findPredecessorIndex<T>(sortedArray: ArrayLike<T>, query: number, key: (element: T) => number) {
-    return binarySearchPredIndex(sortedArray, query, 0, sortedArray.length, key);
+export function firstGteqIndex<T>(sortedArray: ArrayLike<T>, query: number, key: (element: T) => number) {
+    return firstGteqIndexInRange(sortedArray, query, 0, sortedArray.length, key);
 }
 
 /** Return index of the first element within range [start, end) for which `key(element) >= query`.
  * Return `end` if for all elements in the range `key(element) < query`. */
-function binarySearchPredIndex<T>(sortedArray: ArrayLike<T>, query: number, start: number, end: number, key: (element: T) => number) {
+function firstGteqIndexInRange<T>(sortedArray: ArrayLike<T>, query: number, start: number, end: number, key: (element: T) => number) {
     if (start === end) return start;
     // Invariants:
     // key(sortedArray[i]) < query for each i < start
@@ -157,8 +157,8 @@ export class RangeCollection<T> {
     private overlappingItemIndicesInBin(binSpan: number, start: number, stop: number, out: number[]): number[] {
         out.length = 0;
         const bin = this.bins[binSpan];
-        const from = findPredecessorIndex(bin, Math.floor(start) - binSpan + 1, i => this.starts[i]);
-        const to = findPredecessorIndex(bin, Math.ceil(stop), i => this.starts[i]);
+        const from = firstGteqIndex(bin, Math.floor(start) - binSpan + 1, i => this.starts[i]);
+        const to = firstGteqIndex(bin, Math.ceil(stop), i => this.starts[i]);
         for (let j = from; j < to; j++) {
             const i = bin[j];
             if (this.stops[i] > start) {
