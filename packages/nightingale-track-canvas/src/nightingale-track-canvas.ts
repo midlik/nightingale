@@ -73,7 +73,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   override render() {
     return html`
       <div class="container">
-        <div style="position: relative;">
+        <div style="position: relative; z-index: 0;">
           <canvas style="position: absolute; left: 0; top: 0; z-index: -1;"></canvas>
           <svg></svg>
         </div>
