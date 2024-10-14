@@ -2,7 +2,7 @@
 
 [![Published on NPM](https://img.shields.io/npm/v/@nightingale-elements/nightingale-track-canvas.svg)](https://www.npmjs.com/package/@nightingale-elements/nightingale-track-canvas)
 
-Alternative to Nightingale track (`nightingale-track`), using HTML canvas for rendering instead of SVG graphics.
+Alternative to `nightingale-track`, using HTML canvas for rendering instead of SVG graphics.
 
 Canvas-based rendering can provide better performance, especially with large datasets (many features within a track or many parallel tracks). Some non-critical parts are still implemented via SVG (e.g. highlights).
 
