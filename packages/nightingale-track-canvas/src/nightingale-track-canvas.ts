@@ -16,6 +16,8 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   private canvasCtx?: CanvasRenderingContext2D;
   /** Ratio of canvas logical size versus canvas display size */
   private canvasScale: number = 1;
+  /** Feature fragments, stored in a data structure for fast range queries */
+  private fragmentCollection?: RangeCollection<ExtendedFragment>;
 
 
   override connectedCallback(): void {
@@ -29,6 +31,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       }
     });
   }
+
   override disconnectedCallback(): void {
     select(window).on(`resize.NightingaleTrackCanvas-${this.id}`, null);
     super.disconnectedCallback();
@@ -54,8 +57,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     this.canvas = select(this).selectAll<HTMLCanvasElement, unknown>("canvas");
     this.canvasCtx = this.canvas.node()?.getContext("2d") ?? undefined;
     this.onDimensionsChange();
-    // this.allFragments = this.getAllFragments();
-    this.fragmentCollection = this.getFragmentCollection();
+    this.fragmentCollection = getFragmentCollection(this.data);
     if (this.svg) { // this check is necessary because `svg` setter does not always set
       this.bindEvents(this.svg);
       this.highlighted = this.svg.append("g").attr("class", "highlighted");
@@ -78,27 +80,6 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     `;
   }
 
-
-  // private allFragments?: ExtendedFragment[];
-  private getAllFragments(): ExtendedFragment[] {
-    const allFragments: ExtendedFragment[] = [];
-    const nFeatures = this.data.length;
-    for (let i = 0; i < nFeatures; i++) {
-      const feature = this.data[i];
-      if (!feature.locations) continue;
-      for (const location of feature.locations) {
-        for (const fragment of location.fragments) {
-          allFragments.push({ ...fragment, featureIndex: i, location });
-        }
-      }
-    }
-    return allFragments;
-  }
-  private fragmentCollection?: RangeCollection<ExtendedFragment>;
-  private getFragmentCollection(): RangeCollection<ExtendedFragment> {
-    const fragments = this.getAllFragments();
-    return new RangeCollection(fragments, { start: f => f.start, stop: f => (f.end ?? f.start) + 1 });
-  }
 
   private _drawStamp: { data?: Feature[], canvas?: CanvasRenderingContext2D, extent?: string } = {};
   /** If `_drawStamp` has become outdated since the last call to this function, update `_drawStamp` and return true.
@@ -124,7 +105,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   private _draw(): void {
     if (!this.needsRedraw()) return;
     this.adjustCanvasLogicalSize();
-    this.canvasDrawFeatures();
+    this.drawCanvasContent();
   }
 
   private adjustCanvasLogicalSize() {
@@ -139,7 +120,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     }
   }
 
-  private canvasDrawFeatures() {
+  private drawCanvasContent() {
     const ctx = this.canvasCtx;
     if (!ctx) return;
     const canvasWidth = ctx.canvas.width;
@@ -152,27 +133,22 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const baseWidth = scale * this.getSingleBaseWidth();
     const height = scale * Math.max(1, this.layoutObj?.getFeatureHeight() ?? 0); // Yes, sometimes `getFeatureHeight` returns negative numbers ¯\_(ツ)_/¯
     const optXPadding = Math.min(scale * 1.5, 0.25 * baseWidth); // To avoid overlap/touch for certain shapes (line, bridge, helix, strand)
-    const featureYs: Record<number, number> = {};
-    const featureStrokeColors: Record<number, string> = {};
-    const featureFillColors: Record<number, string> = {};
-    const featureOpacities: Record<number, number> = {};
-    const featureShapes: Record<number, Shapes> = {};
     const leftEdgeSeq = this.getSeqPositionFromX(0 - SYMBOL_RADIUS) ?? -Infinity;
     const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale + SYMBOL_RADIUS) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it considers margins and symbol size
 
+    // Draw features
     const fragments = this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq);
-    // const fragments = (this.allFragments ?? []).filter(f => f.start <= rightEdgeSeq && (f.end ?? f.start) + 1 >= leftEdgeSeq);
     for (const fragment of fragments) {
       const iFeature = fragment.featureIndex;
       const fragmentLength = (fragment.end ?? fragment.start) + 1 - fragment.start;
       const x = scale * this.getXFromSeqPosition(fragment.start);
       const width = fragmentLength * baseWidth;
-      const y = featureYs[iFeature] ??= scale * (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
-      const shape = featureShapes[iFeature] ??= this.getShape(this.data[iFeature]);
-      ctx.fillStyle = featureFillColors[iFeature] ??= this.getFeatureFillColor(this.data[iFeature]);
-      ctx.strokeStyle = featureStrokeColors[iFeature] ??= this.getFeatureColor(this.data[iFeature]);
-      ctx.globalAlpha = featureOpacities[iFeature] ??= (this.data[iFeature].opacity ?? 0.9);
+      const y = scale * (this.layoutObj?.getFeatureYPos(this.data[iFeature]) ?? 0);
+      const shape = this.getShape(this.data[iFeature]);
+      ctx.fillStyle = this.getFeatureFillColor(this.data[iFeature]);
+      ctx.strokeStyle = this.getFeatureColor(this.data[iFeature]);
+      ctx.globalAlpha = (this.data[iFeature].opacity ?? 0.9);
 
       const rangeDrawn = drawRange(ctx, shape, x, y, width, height, optXPadding, fragmentLength);
       if (!rangeDrawn) {
@@ -190,15 +166,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
       }
     }
 
-    this.drawMargins();
-  }
-
-  private drawMargins() {
-    const ctx = this.canvasCtx;
-    if (!ctx) return;
-    const canvasWidth = ctx.canvas.width;
-    const canvasHeight = ctx.canvas.height;
-    const scale = this.canvasScale;
+    // Draw margins
     ctx.globalAlpha = 1;
     ctx.fillStyle = this["margin-color"];
     const marginLeft = this["margin-left"] * scale;
@@ -259,11 +227,13 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     target.on("mousemove.NightingaleTrackCanvas", (event: MouseEvent) => this.handleMousemove(event));
     target.on("mouseout.NightingaleTrackCanvas", () => this.handleMouseout());
   }
+
   private unbindEvents<T extends BaseType>(target: Selection<T, unknown, BaseType, unknown>): void {
     target.on("click.NightingaleTrackCanvas", null);
     target.on("mousemove.NightingaleTrackCanvas", null);
     target.on("mouseout.NightingaleTrackCanvas", null);
   }
+
   private handleClick(event: MouseEvent): void {
     const fragment = this.getFragmentAt(event.offsetX, event.offsetY);
     if (!fragment) {
@@ -284,6 +254,7 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     );
     this.dispatchEvent(customEvent);
   }
+
   private handleMousemove(event: MouseEvent): void {
     const fragment = this.getFragmentAt(event.offsetX, event.offsetY);
     if (!fragment) {
@@ -304,33 +275,37 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     );
     this.dispatchEvent(customEvent);
   }
+
   private handleMouseout(): void {
     const withHighlight = this.getAttribute("highlight-event") === "onmouseover";
     const customEvent = createEvent("mouseout", null, withHighlight);
     this.dispatchEvent(customEvent);
-  }
-
-  /** Render canvas content in specified `scale` (or in current display scale if not provided) and return as `ImageData`. 
-   * Return `undefined` if canvas has not been initialized. */
-  getImageData(options?: { scale?: number }): ImageData | undefined {
-    if (!this.canvasCtx) return undefined;
-    const scale = options?.scale ?? this.canvasScale;
-    const oldScale = this.canvasScale;
-    try {
-      this.canvasScale = scale;
-      this._draw();
-      const imageData = this.canvasCtx.getImageData(0, 0, this.canvasCtx.canvas.width, this.canvasCtx.canvas.height);
-      return imageData;
-    } finally {
-      this.canvasScale = oldScale;
-      this._draw();
-    }
   }
 }
 
 
 function getDevicePixelRatio(): number {
   return window?.devicePixelRatio ?? 1;
+}
+
+function getAllFragments(data: Feature[]): ExtendedFragment[] {
+  const out: ExtendedFragment[] = [];
+  const nFeatures = data.length;
+  for (let i = 0; i < nFeatures; i++) {
+    const feature = data[i];
+    if (!feature.locations) continue;
+    for (const location of feature.locations) {
+      for (const fragment of location.fragments) {
+        out.push({ ...fragment, featureIndex: i, location });
+      }
+    }
+  }
+  return out;
+}
+
+function getFragmentCollection(data: Feature[]): RangeCollection<ExtendedFragment> {
+  const fragments = getAllFragments(data);
+  return new RangeCollection(fragments, { start: f => f.start, stop: f => (f.end ?? f.start) + 1 });
 }
 
 
