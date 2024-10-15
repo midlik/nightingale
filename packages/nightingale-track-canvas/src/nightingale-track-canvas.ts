@@ -44,15 +44,12 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   }
 
   protected override createTrack() {
-    // console.log("createTrack")
     if (this.svg) {
       this.svg.selectAll("g").remove();
       this.unbindEvents(this.svg);
     }
     if (!this.data) return;
-    // console.time(`layoutObj.init(${this.data.length})`)
     this.layoutObj?.init(this.data);
-    // console.timeEnd(`layoutObj.init(${this.data.length})`)
     this.svg = select(this).selectAll<SVGSVGElement, unknown>("svg");
     this.canvas = select(this).selectAll<HTMLCanvasElement, unknown>("canvas");
     this.canvasCtx = this.canvas.node()?.getContext("2d") ?? undefined;
@@ -145,7 +142,6 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
   private canvasDrawFeatures() {
     const ctx = this.canvasCtx;
     if (!ctx) return;
-    // console.time("canvasDrawFeatures") // ~0.025-0.1 ms without manipulating canvas, ~0.2 ms with drawing rects individually (sequence length 400)
     const canvasWidth = ctx.canvas.width;
     const canvasHeight = ctx.canvas.height;
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -161,8 +157,6 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const featureFillColors: Record<number, string> = {};
     const featureOpacities: Record<number, number> = {};
     const featureShapes: Record<number, Shapes> = {};
-    // const leftEdgeSeq = this.getSeqPositionFromX(this["margin-left"]) ?? -Infinity;
-    // const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale - this["margin-left"]) ?? Infinity;
     const leftEdgeSeq = this.getSeqPositionFromX(0) ?? -Infinity;
     const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale) ?? Infinity;
     // This is better than this["display-start"], this["display-end"]+1, because it contains margins
@@ -198,9 +192,6 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     }
 
     this.drawMargins();
-    // console.timeEnd("canvasDrawFeatures")
-    // if (this.id === 'canvas-track-0') console.timeEnd("time Loading all and rendering first")
-    // if (this.id === 'canvas-track-z') console.timeEnd("time Loading all and rendering")
   }
 
   private drawMargins() {
