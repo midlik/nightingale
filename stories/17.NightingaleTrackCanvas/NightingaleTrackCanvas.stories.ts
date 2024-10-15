@@ -8,7 +8,7 @@ export default { title: "Components/Tracks/NightingaleTrack-Canvas" } as Meta;
 
 
 const DefaultArgs = {
-  "min-width": 500,
+  "min-width": 400,
   "height": 24,
   "highlight-event": "onmouseover", // "onmouseover"|"onclick"
   "highlight-color": "#EB3BFF22",
@@ -188,7 +188,7 @@ function makeStory(options: { nTracks: number, showNightingaleTrack: boolean, sh
     return html`
       <style>
         .row { line-height: 0; margin-top: 2px; display: flex; align-items: center; }
-        .label { width: 40px; line-height: initial; font-size: 0.8rem; text-align: center; }
+        .label { width: 40px; line-height: initial; font-size: 0.8rem; text-align: center; overflow: hidden; }
       </style>
       <nightingale-saver element-id="nightingale-root" background-color="white" scale-factor="2"></nightingale-saver>
       <span>Use Ctrl+scroll to zoom.</span>

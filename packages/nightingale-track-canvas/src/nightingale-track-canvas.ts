@@ -157,10 +157,9 @@ export default class NightingaleTrackCanvas extends NightingaleTrack {
     const featureFillColors: Record<number, string> = {};
     const featureOpacities: Record<number, number> = {};
     const featureShapes: Record<number, Shapes> = {};
-    const leftEdgeSeq = this.getSeqPositionFromX(0) ?? -Infinity;
-    const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale) ?? Infinity;
-    // This is better than this["display-start"], this["display-end"]+1, because it contains margins
-    // TODO consider lineWidth and symbol width here
+    const leftEdgeSeq = this.getSeqPositionFromX(0 - SYMBOL_RADIUS) ?? -Infinity;
+    const rightEdgeSeq = this.getSeqPositionFromX(canvasWidth / scale + SYMBOL_RADIUS) ?? Infinity;
+    // This is better than this["display-start"], this["display-end"]+1, because it considers margins and symbol size
 
     const fragments = this.fragmentCollection.overlappingItems(leftEdgeSeq, rightEdgeSeq);
     // const fragments = (this.allFragments ?? []).filter(f => f.start <= rightEdgeSeq && (f.end ?? f.start) + 1 >= leftEdgeSeq);
