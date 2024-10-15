@@ -44,15 +44,6 @@ export function sleep(ms: number): Promise<void> {
 }
 
 
-/** Return a Python-like range array, i.e. [0, 1, 2,... n-1] */
-export function range(n: number): number[] {
-    n = Math.floor(n);
-    const out = new Array(n);
-    for (let i = 0; i < n; i++) out[i] = i;
-    return out;
-}
-
-
 /** Return the last element of `array`, or `undefined` if there are no elements.
  * If `predicate` is provided, return the last element where `predicate` returns true,
  * or `undefined` if there is no such element. */
@@ -180,7 +171,7 @@ export class RangeCollection<T> {
 }
 
 function mergeSortedArrays<T>(arrays: T[][], compareFn: (a: T, b: T) => number): T[] {
-    const queue = range(arrays.length).filter(i => arrays[i].length > 0);
+    const queue = arrays.map((arr, i) => i).filter(i => arrays[i].length > 0);
     queue.sort((a, b) => compareFn(arrays[a][0], arrays[b][0]));
     const heads = arrays.map(() => 0);
     const out: T[] = [];
